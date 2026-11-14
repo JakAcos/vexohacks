@@ -5,6 +5,12 @@ import { resolve } from "node:path";
 import { Store, HttpError } from "./store.js";
 import { extractDemo, extractGemini } from "./agents.js";
 import {
+  audioTypes,
+  voiceStatus,
+  transcribeAudio,
+  synthesizeBriefing,
+} from "./voice.js";
+import {
   incidentIdSchema,
   observationInput,
   type Incident,
@@ -31,8 +37,24 @@ export function createApp({
         return res
           .status(403)
           .json({ error: "Cross-origin writes are disabled." });
-      if (!req.is("application/json"))
-        return res.status(415).json({ error: "Send application/json." });
+      if (
+        req.path === "/api/audio/observations"
+          ? !audioTypes.has(
+              (req.get("Content-Type") ?? "")
+                .split(";")[0]
+                .trim()
+                .toLowerCase(),
+            )
+          : !req.is("application/json")
+      )
+        return res
+          .status(415)
+          .json({
+            error:
+              req.path === "/api/audio/observations"
+                ? "Send a supported audio Content-Type (WAV, MP3, MP4, WebM, Ogg or FLAC)."
+                : "Send application/json.",
+          });
     }
     next();
   });
@@ -57,6 +79,7 @@ export function createApp({
       geminiConfigured: Boolean(
         process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL,
       ),
+      voice: voiceStatus(),
       simulated: true,
     }),
   );
@@ -100,6 +123,73 @@ export function createApp({
       inputKind,
     );
     res.status(201).json(publish(state));
+  });
+  app.post(
+    "/api/audio/observations",
+    express.raw({ type: () => true, limit: "8mb" }),
+    async (req, res) => {
+      const { incidentId, speaker } = z
+        .object({
+          incidentId: incidentIdSchema,
+          speaker: z.string().trim().min(1).max(80),
+          consent: z.literal("send-to-deepgram"),
+        })
+        .strict()
+        .parse(req.query);
+      if (!Buffer.isBuffer(req.body) || !req.body.length)
+        throw new HttpError(
+          400,
+          "Choose a nonempty single-speaker audio file.",
+        );
+      const text = await transcribeAudio(
+        req.body,
+        (req.get("Content-Type") ?? "").split(";")[0].toLowerCase(),
+      );
+      const state = await store.record(
+        incidentId,
+        speaker,
+        text,
+        mode,
+        async () =>
+          mode === "gemini" ? extractGemini(text, speaker) : extractDemo(text),
+        "transcript",
+      );
+      res.status(201).json(publish(state));
+    },
+  );
+  app.post("/api/briefings/audio", async (req, res) => {
+    const { incidentId, briefingId } = z
+      .object({ incidentId: incidentIdSchema, briefingId: z.string().uuid() })
+      .strict()
+      .parse(req.body);
+    const state = await store.get(incidentId),
+      briefing = state.briefings.at(-1);
+    if (
+      !briefing ||
+      briefing.id !== briefingId ||
+      briefing.stateVersion !== state.version
+    )
+      throw new HttpError(
+        409,
+        "Request and review a current briefing before generating audio.",
+      );
+    const audio = await synthesizeBriefing(briefing.text);
+    const current = await store.get(incidentId);
+    if (
+      current.version !== state.version ||
+      current.briefings.at(-1)?.id !== briefing.id
+    )
+      throw new HttpError(
+        409,
+        "Incident or briefing changed during synthesis. Request fresh briefing audio.",
+      );
+    res
+      .set({
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
+        "X-Briefing-Id": briefing.id,
+      })
+      .send(audio);
   });
   const idBody = z.object({ incidentId: incidentIdSchema }).strict();
   app.post("/api/briefings", async (req, res) => {

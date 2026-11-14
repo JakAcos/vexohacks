@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { scenario, type Incident, type Issue } from "../shared/model";
 import "./style.css";
-type Health = { mode: "demo" | "gemini"; roles: Record<string, string> };
+type Health = {
+  mode: "demo" | "gemini";
+  roles: Record<string, string>;
+  voice: {
+    deepgram: { configured: boolean };
+    minimax: { configured: boolean };
+  };
+};
 const requestedId = new URLSearchParams(window.location.search).get(
   "incidentId",
 );
@@ -42,7 +49,10 @@ function App() {
     [latency, setLatency] = useState<number>(),
     [reviewed, setReviewed] = useState(false),
     [lead, setLead] = useState("Team lead"),
-    [reset, setReset] = useState(false);
+    [reset, setReset] = useState(false),
+    [audioFile, setAudioFile] = useState<File>(),
+    [audioConsent, setAudioConsent] = useState(false),
+    [audioUrl, setAudioUrl] = useState<string>();
   useEffect(() => {
     request("/health")
       .then(setHealth)
@@ -58,6 +68,83 @@ function App() {
   const draft = state?.handovers.at(-1),
     briefing = state?.briefings.at(-1);
   useEffect(() => setReviewed(false), [draft?.id, state?.version]);
+  useEffect(() => setAudioUrl(undefined), [briefing?.id, state?.version]);
+  useEffect(
+    () => () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    },
+    [audioUrl],
+  );
+  async function uploadAudio() {
+    if (!audioFile || !audioConsent) return;
+    if (audioFile.size > 8 * 1024 * 1024) {
+      setError("Choose an audio file no larger than 8 MiB.");
+      return;
+    }
+    const formats: Record<string, string> = {
+      wav: "audio/wav",
+      mp3: "audio/mpeg",
+      m4a: "audio/mp4",
+      mp4: "audio/mp4",
+      webm: "audio/webm",
+      ogg: "audio/ogg",
+      flac: "audio/flac",
+    };
+    const contentType =
+      audioFile.type ||
+      formats[audioFile.name.split(".").at(-1)?.toLowerCase() ?? ""];
+    if (!contentType) {
+      setError("Choose WAV, MP3, M4A, WebM, Ogg or FLAC audio.");
+      return;
+    }
+    setBusy("Sending selected file to Deepgram → recording transcript");
+    setError("");
+    const start = performance.now();
+    try {
+      const query = new URLSearchParams({
+        incidentId,
+        speaker,
+        consent: "send-to-deepgram",
+      });
+      const response = await fetch(`/api/audio/observations?${query}`, {
+        method: "POST",
+        headers: { "Content-Type": contentType },
+        body: audioFile,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Audio upload failed.");
+      setState(result);
+      setLatency(Math.round(performance.now() - start));
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function generateAudio() {
+    if (!briefing) return;
+    setBusy("Generating MiniMax briefing audio");
+    setError("");
+    setAudioUrl(undefined);
+    const start = performance.now();
+    try {
+      const response = await fetch("/api/briefings/audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incidentId, briefingId: briefing.id }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error ?? "MiniMax audio failed.");
+      }
+      setAudioUrl(URL.createObjectURL(await response.blob()));
+      setLatency(Math.round(performance.now() - start));
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
   async function act(label: string, path: string, body: unknown) {
     setBusy(label);
     setError("");
@@ -255,6 +342,54 @@ function App() {
                 Typed text now. Vexo transcripts can use the same backend
                 endpoint.
               </p>
+              <div className="voice-upload">
+                <h3>Audio file → Deepgram</h3>
+                <p className="small muted">
+                  {!health
+                    ? "Checking provider configuration…"
+                    : health.voice.deepgram.configured
+                      ? "Backend configured · availability checked on request"
+                      : "Not configured · set DEEPGRAM_API_KEY on the backend"}
+                </p>
+                <label>
+                  Single-speaker audio file (up to 8 MiB)
+                  <input
+                    type="file"
+                    accept="audio/wav,audio/mpeg,audio/mp4,audio/webm,audio/ogg,audio/flac,.wav,.mp3,.m4a,.webm,.ogg,.flac"
+                    onChange={(e) => {
+                      setAudioFile(e.target.files?.[0]);
+                      setAudioConsent(false);
+                    }}
+                  />
+                </label>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={audioConsent}
+                    onChange={(e) => setAudioConsent(e.target.checked)}
+                  />
+                  Send this selected recording to Deepgram and record its
+                  transcript under {speaker}. Everyone recorded agreed to this
+                  use.
+                </label>
+                <button
+                  className="secondary"
+                  disabled={
+                    !!busy ||
+                    !audioFile ||
+                    !audioConsent ||
+                    !health?.voice.deepgram.configured
+                  }
+                  onClick={uploadAudio}
+                >
+                  Transcribe file and record observation
+                </button>
+                <p className="small muted">
+                  No microphone capture. One speaker per file; review the
+                  resulting transcript. Empty or low-confidence results are
+                  rejected.
+                </p>
+              </div>
             </section>
             <section className="panel scenario">
               <div className="panel-heading">
@@ -410,6 +545,44 @@ function App() {
               <p className="small muted">
                 Browser speech only · not MiniMax or band playback
               </p>
+              <div className="voice-output">
+                <h3>MiniMax briefing audio</h3>
+                <p className="small muted">
+                  {!health
+                    ? "Checking provider configuration…"
+                    : health.voice.minimax.configured
+                      ? "Backend configured · availability checked on request"
+                      : "Not configured · set backend MiniMax key, model and voice"}
+                </p>
+                <button
+                  className="secondary"
+                  disabled={
+                    !!busy ||
+                    !health?.voice.minimax.configured ||
+                    !briefing ||
+                    briefing.stateVersion !== state?.version
+                  }
+                  onClick={generateAudio}
+                >
+                  Generate MiniMax audio
+                </button>
+                <p className="small muted">
+                  Generation sends the current briefing text to MiniMax. Play
+                  the returned audio on this computer; no band speaker is used.
+                </p>
+                {audioUrl && (
+                  <audio
+                    aria-label="MiniMax briefing playback"
+                    controls
+                    src={audioUrl}
+                    onError={() =>
+                      setError(
+                        "Returned MiniMax audio could not be played. The written briefing remains available.",
+                      )
+                    }
+                  />
+                )}
+              </div>
             </section>
             <section className="panel">
               <p className="eyebrow">HUMAN REVIEW</p>

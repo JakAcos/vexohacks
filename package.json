@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "start": "node build-server/server/index.js",
     "test": "tsc -p tsconfig.test.json && node --test --test-timeout=15000 build-tests/tests/*.test.js",
-    "vexo:sim": "node scripts/vexo-bridge.mjs"
+    "vexo:sim": "node scripts/vexo-bridge.mjs",
+    "vexo:check": "node scripts/check-vexo-kit.mjs"
   },
   "dependencies": {
     "express": "^5.3.0",

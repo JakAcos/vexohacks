@@ -2,7 +2,7 @@
 
 A wearable incident coordination system proposed for the November 14, 2026 Vexo hackathon.
 
-**Status: working local text demo; wearable integration pending.** The backend, React dashboard, persistent incident record, source-based tracking, requested briefings, and human-approved simulated handover feed are implemented. Default processing is deterministic scenario logic, not live Gemini. Planning, implementation, and README preparation were AI-assisted.
+**Status: working local text demo with optional server-side voice adapters; wearable integration pending.** The backend, React dashboard, persistent incident record, source-based tracking, requested briefings, and human-approved simulated handover feed are implemented. Default processing is deterministic scenario logic, not live Gemini. Planning, implementation, and README preparation were AI-assisted.
 
 > For a simulated emergency only. The prototype is intended to support communication and situational awareness. Humans make all operational decisions. No real emergency service is contacted during the demo.
 
@@ -30,7 +30,7 @@ The dashboard receives live Server-Sent Events (SSE). Observation extraction tim
 
 ## Backend contract
 
-All mutations require `Content-Type: application/json`. The default UI incident ID is `apartment-demo`; IDs are 1–64 letters, digits, `_` or `-`. State is isolated by incident ID.
+JSON mutations require `Content-Type: application/json`; the audio-upload endpoint below accepts raw audio bytes. The default UI incident ID is `apartment-demo`; IDs are 1–64 letters, digits, `_` or `-`. State is isolated by incident ID.
 
 ```sh
 curl -X POST http://127.0.0.1:3001/api/observations \
@@ -67,14 +67,18 @@ cp .env.example .env
 # In one terminal, start the built app:
 npm start
 # In another terminal, run the simulator adapter:
+npm run vexo:check
+# After entering the team number:
 npm run vexo:sim
 ```
+
+`npm run vexo:check` imports the actual SDK and verifies its exported connection and simulation interfaces without constructing or connecting any band. It does not need a band number.
 
 The adapter refuses missing/invalid numbers, connects only with `SimTransport`, verifies the returned identity, configures events, and triggers three simulated taps. Each tap releases one **scripted text** report through `/api/observations`; it then requests the updated briefing. Keep the dashboard open to see the streamed updates. Reset the demo before replaying it. `VEXO_KIT_PATH` defaults to `./vexo-open-kit`; `COPILOT_URL` defaults to `http://127.0.0.1:3001`. Optional separate incident: `npm run vexo:sim -- --incident-id adapter-test` (view that incident at `http://127.0.0.1:3001/?incidentId=adapter-test`).
 
 **This adapter does not capture or transcribe speech.** The kit's default simulated audio is silence, and its bundled speech recording is a fable, not the incident scenario. Our scripted text is explicitly labeled `vexo-simulated-text`. The adapter's event interface and HTTP flow are tested with a contract double; an actual kit connection has not been run while the team number is unknown.
 
-For the later wearable bridge, use the kit's speech helper (`examples/python/speech.py`: `speech.listen(band, seconds)` or final transcript callbacks), then POST `{incidentId,speaker,text,inputKind:"transcript"}` to the endpoint above. Follow the kit's own number filtering, microphone/consent and Deepgram-key instructions. Deepgram and physical microphone capture remain pending; no key belongs in the React app. The kit documents **no speaker on the band**, so spoken briefings need the laptop or another separately verified audio device.
+For the later wearable bridge, use the kit's speech helper (`examples/python/speech.py`: `speech.listen(band, seconds)` or final transcript callbacks), then POST `{incidentId,speaker,text,inputKind:"transcript"}` to the endpoint above. Follow the kit's own number filtering, microphone/consent and Deepgram-key instructions. Physical microphone capture remains pending; the new file-upload endpoint can transcribe prerecorded speech without capturing a microphone. No key belongs in the React app. The kit documents **no speaker on the band**, so spoken briefings need the laptop or another separately verified audio device.
 
 ## Optional live Gemini extraction
 
@@ -82,7 +86,30 @@ Default: `AGENT_MODE=demo`. To opt in, create an ignored `.env` from `.env.examp
 
 The backend uses the official [Interactions structured-output API](https://ai.google.dev/gemini-api/docs/structured-output), with a JSON schema and application-side validation. The dashboard explicitly shows **Gemini extraction** when enabled. Only recorder extraction uses the live model; tracking remains an evidence reducer and briefings remain source-based templates. No fake swarm or silent fallback runs. Startup fails if Gemini configuration is incomplete; request failures leave the observation uncommitted and show an error. Incident text leaves the computer for Google in this mode.
 
-Live Gemini has not been exercised with credentials. Its request/response handling is covered by mocked contract tests, which do not establish real provider compatibility or extraction quality. Deepgram and MiniMax are planned, not integrated.
+Live Gemini has not been exercised with credentials. Its request/response handling is covered by mocked contract tests, which do not establish real provider compatibility or extraction quality. Deepgram file transcription and MiniMax briefing speech have server-side adapters and mocked contract coverage; real provider calls remain unverified without credentials.
+
+## Optional audio-file input and MiniMax playback
+
+These are real server-side provider adapters, not a simulated provider or silent fallback. **No live provider call has been verified yet:** this checkout has no Deepgram, MiniMax or Gemini credentials. Configuration status only means required settings exist; it does not prove the key, quota, model or voice works.
+
+- **Deepgram:** Set `DEEPGRAM_API_KEY` in your own ignored `.env`; optional `DEEPGRAM_MODEL` defaults to `nova-3`. In the dashboard, select a single-speaker recording, choose the responder, acknowledge that the recording will go to Deepgram, and click **Transcribe file and record observation**. Nothing records the computer microphone. Supported uploads: WAV, MP3, M4A/MP4, WebM, Ogg and FLAC, up to **8 MiB**. Only the resulting transcript is stored; raw audio is not persisted locally. Review the text in the timeline. Empty transcripts, confidence below 0.8, multi-channel responses, and text over 4,000 characters are rejected without changing the incident. This threshold is a conservative prototype rule, not validated recognition accuracy.
+- **MiniMax:** Set `MINIMAX_API_KEY`, `MINIMAX_MODEL`, and `MINIMAX_VOICE_ID` to values available to your account. Request a current briefing, then click **Generate MiniMax audio**. The stored briefing text goes to MiniMax; returned MP3 audio plays only when you press the audio player's controls. Audio is held in memory, not added to incident persistence. Changed or outdated briefings cannot generate playable stale audio. This uses the computer's output device, not a band speaker. The separate browser-speech button remains explicitly labeled.
+
+Official contracts: [Deepgram prerecorded audio](https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded), [Deepgram model-improvement opt-out](https://developers.deepgram.com/trust-security/your-data), and [MiniMax synchronous text-to-speech](https://platform.minimax.io/docs/api-reference/speech-t2a-http). Deepgram requests always include `mip_opt_out=true`. Both providers use fixed HTTPS endpoints, backend-only credentials, and a 30-second timeout.
+
+```sh
+# Raw file upload, NOT JSON or multipart. Use a recording everyone agreed to share.
+curl -X POST 'http://127.0.0.1:3001/api/audio/observations?incidentId=apartment-demo&speaker=Firefighter%20A&consent=send-to-deepgram' \
+  -H 'Content-Type: audio/wav' --data-binary @your-single-speaker-recording.wav
+```
+
+| Endpoint | Contract |
+| --- | --- |
+| `POST /api/audio/observations?incidentId=...&speaker=...&consent=send-to-deepgram` | Raw supported audio; successful transcript runs through the same recorder/tracker/store and returns the committed incident (`201`, `inputKind: "transcript"`). The consent value is required. |
+| `POST /api/briefings/audio` | JSON `{incidentId, briefingId}` for the latest requested briefing → `audio/mpeg` with `Cache-Control: no-store`. Rejects outdated briefings or changes during synthesis (`409`). |
+| `GET /api/health` | `voice.deepgram.configured` / `voice.minimax.configured` indicate configuration presence only. No credentials returned; no paid health-probe calls made. |
+
+Missing provider configuration returns `503`; network, timeout, invalid provider output or provider refusal returns `502`; unusable transcripts return `422`; oversized uploads return `413`; unsupported media returns `415`. There is no automatic provider fallback. Failed transcription/extraction does not create an observation; failed synthesis does not change state. Select the correct single speaker yourself; this adapter does not identify people from their voices. Recognition and extraction can still be wrong even above the confidence threshold, so all results remain attributed reports for human review.
 
 ## Checks and implementation map
 
@@ -92,11 +119,12 @@ npm test
 npm run build
 ```
 
-Tests cover the resident correction and retained hazards/history; responder-vs-resident concern isolation; contradictions; disk persistence; failed extractions and concurrent writes; input validation; HTTP/SSE flow; stale and duplicate handover approvals; scoped resets; cross-origin rejection; Gemini response validation; and the tap-adapter-to-backend flow. Tests use temporary state folders and do not contact real emergency services or a live AI provider.
+Tests cover the resident correction and retained hazards/history; responder-vs-resident concern isolation; contradictions; disk persistence; failed extractions and concurrent writes; input validation; HTTP/SSE flow; stale and duplicate handover approvals; scoped resets; cross-origin rejection; Gemini response validation; the tap-adapter-to-backend flow; audio consent/media/size validation; Deepgram transcript failures; MiniMax output validation and stale synthesis rejection. Tests use temporary state folders and do not contact real emergency services or a live AI provider.
 
 - `src/server/agents.ts`: recorder extraction providers and source-based briefing role.
 - `src/server/store.ts`: shared store, situation tracking, history and handover approval.
 - `src/server/app.ts`: validated HTTP endpoints and live SSE updates.
+- `src/server/voice.ts`: optional Deepgram raw-audio transcription and MiniMax current-briefing audio.
 - `src/client/`: responsive team lead dashboard and demo controls.
 - `scripts/vexo-bridge.mjs`: optional kit simulator connection; no physical-band access.
 
