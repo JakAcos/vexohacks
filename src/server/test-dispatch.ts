@@ -1,3 +1,4 @@
+import { browserTicketExecutor, type TicketExecutor } from "./browser-ticket.js";
 import { mkdir, readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Express } from "express";
@@ -6,12 +7,17 @@ import { incidentIdSchema } from "../shared/model.js";
 import { followUpMessage, ticketReceiptSchema, followUpReceiptSchema, type DispatchRun, type DispatchSnapshot } from "../shared/test-dispatch.js";
 import { DispatchLock, saveDispatchFile } from "./test-dispatch-files.js";
 
-export type TestDispatchConfig = { origin: string; aToken: string; bToken: string; timeoutMs?: number };
+export type TestDispatchConfig = { origin: string; aToken: string; bToken: string; timeoutMs?: number; ticketExecutor?: TicketExecutor; evidenceDirectory?: string };
 export function testDispatchConfig(env: NodeJS.ProcessEnv = process.env): TestDispatchConfig | undefined {
   const origin = env.RELAY_TEST_DESK_ORIGIN, aToken = env.RELAY_TEST_DISPATCH_A_TOKEN, bToken = env.RELAY_TEST_DISPATCH_B_TOKEN;
   if (!origin && !aToken && !bToken) return;
   if (!origin || !aToken || !bToken) throw new Error("Configure the test desk origin and both worker credentials together.");
-  return validateTestDispatch({ origin, aToken, bToken });
+  const config: TestDispatchConfig = validateTestDispatch({ origin, aToken, bToken });
+  if (env.RELAY_BROWSER_AGENT_ID) {
+    config.evidenceDirectory = join(env.DATA_DIR ?? "./data", "browser-evidence");
+    config.ticketExecutor = browserTicketExecutor({ origin: config.origin, aToken, agentId: env.RELAY_BROWSER_AGENT_ID, directory: config.evidenceDirectory, modulePath: env.RELAY_PLAYWRIGHT_MODULE });
+  }
+  return config;
 }
 function validateTestDispatch(config: TestDispatchConfig) {
   const url = new URL(config.origin);
@@ -54,7 +60,7 @@ export class TestDispatch {
   async snapshot(missionId: string): Promise<DispatchSnapshot> {
     incidentIdSchema.parse(missionId);
     const runs = (await this.runs()).filter(r => r.missionId === missionId).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-    return { enabled: Boolean(this.config), destination: this.config?.origin, runs };
+    return { executionMode: this.config?.ticketExecutor ? "browser_form" : "http", enabled: Boolean(this.config), destination: this.config?.origin, runs };
   }
   async resume() {
     if (!this.config) return;
@@ -128,7 +134,13 @@ export class TestDispatch {
     try {
       if (run.destination !== this.config!.origin) throw new Error("Test destination changed. Restore the original destination before retrying.");
       if (!run.ticket) {
-        const receipt = ticketReceiptSchema.parse(await this.call("/tickets", "a", `${id}:ticket`, { runId: id, missionId, title: run.title }));
+        const input = { runId: id, missionId, title: run.title };
+        const browserResult = this.config!.ticketExecutor ? await this.config!.ticketExecutor(input) : undefined;
+        const receipt = ticketReceiptSchema.parse(browserResult ? browserResult.receipt : await this.call("/tickets", "a", `${id}:ticket`, input));
+        if (browserResult) {
+          run.browserEvidence = browserResult.evidence;
+          this.event(run, "dispatcher_a", "Browser filled the destination form and clicked Submit. Before/after screenshots and the accepted receipt were captured.");
+        }
         if (receipt.runId !== id || receipt.missionId !== missionId || receipt.title !== run.title) throw new Error("Submission receipt does not match this request.");
         run.ticket = receipt; run.status = "following_up";
         this.event(run, "dispatcher_a", `Test desk accepted ticket ${receipt.id}. Handing the destination-issued receipt to Dispatcher B.`);
@@ -152,11 +164,22 @@ export class TestDispatch {
       await saveDispatchFile(this.path(missionId, id), run);
     }
   }
+  async evidenceFile(missionId: string, id: string, name: string) {
+    if (!["before.png", "after.png", "evidence.json"].includes(name)) throw fail(404, "Evidence not found.");
+    const run = await this.get(missionId, id);
+    if (!run?.browserEvidence || !this.config?.evidenceDirectory) throw fail(404, "Browser evidence not available.");
+    return join(this.config.evidenceDirectory, missionId, id, name);
+  }
   async idle() { await Promise.allSettled([...this.tasks.values()]); }
   async close() { this.stopped = true; await this.idle(); }
 }
 
 export function mountTestDispatch(app: Express, dispatch: TestDispatch) {
+  app.get("/api/incidents/:id/test-dispatch/:runId/evidence/:name", async (req, res) => {
+    const file = await dispatch.evidenceFile(incidentIdSchema.parse(req.params.id), z.string().uuid().parse(req.params.runId), req.params.name as string);
+    res.set("Cache-Control", "no-store");
+    res.type(file.endsWith(".png") ? "png" : "json").send(await readFile(file));
+  });
   app.get("/api/incidents/:id/test-dispatch", async (req, res) => res.json(await dispatch.snapshot(incidentIdSchema.parse(req.params.id))));
   app.post("/api/incidents/:id/test-dispatch", async (req, res) => res.status(202).json(await dispatch.start(incidentIdSchema.parse(req.params.id), req.body)));
   app.post("/api/incidents/:id/test-dispatch/:runId/retry", async (req, res) => {

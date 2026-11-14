@@ -1,6 +1,6 @@
 # Relay: the three-hour catch-up
 
-Updated November 14, 2026 after independent execution-milestone acceptance. Prepared by Codex; agent-authored, not human-reviewed. Delivered through [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5).
+Updated November 14, 2026 after independent browser-execution acceptance. Prepared by Codex; agent-authored, not human-reviewed. The HTTP checkpoint remains frozen in [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5); this branch adds a separately verified browser worker.
 
 ## The central idea
 
@@ -8,9 +8,19 @@ Updated November 14, 2026 after independent execution-milestone acceptance. Prep
 
 Dante’s product is a shared operating center for a mission. Police, firefighters, ambulance crews and the 911 dispatcher each contribute through a Vexo band. They leave it listening throughout the mission. Their reports and conversations accumulate in one mission-specific context. Agents there use the combined picture to communicate, request services and take useful actions. People should not have to repeatedly prompt the system or manage how its parts connect.
 
-The target includes multiple responders and mission-long listening, potentially two hours. The current work proves parts of that vision: an earlier physical-band-to-Gemini path, a shared mission/approval system, and now a real, controlled two-worker execution chain. These have not yet been accepted as one continuous physical-band-to-external-action flow.
+The target includes multiple responders and mission-long listening, potentially two hours. The current work proves parts of that vision: an earlier physical-band-to-Gemini path, a shared mission/approval system, and now a real, controlled two-worker execution chain. The optional browser worker is now independently verified too. These pieces have not yet been accepted as one continuous physical-band-to-external-action flow.
 
-## The latest milestone: what actually works now
+## Browser execution: a separate verified addition
+
+The HTTP checkpoint remains frozen at `dc506a8` in PR #5. This branch adds an optional browser executor to the same test workflow. When enabled, Dispatcher A opens the controlled Test Desk form in its own allocated Chrome profile, fills the request and clicks **Submit ticket**. The destination saves the ticket and issues a receipt. Dispatcher B still independently reads that receipt, sends a linked follow-up over HTTP and reads the result back.
+
+Relay shows the destination-issued IDs plus before/after screenshots of A's browser action. The screenshots and their hashes document the observed run; they are not proof of autonomous intelligence. The worker checks its assigned browser profile, process and window, and fails if ownership cannot be established. It does not fall back to an HTTP submission when browser execution fails.
+
+This supplies another part of the central idea: coordinated agents can carry a request into a computer interface, then use the confirmed result in the next step. The request is still entered manually and the worker follows a fixed form workflow. Mission-driven AI action selection is a separate workstream; it is not included or claimed in this browser checkpoint. No physical-band-to-browser chain has been accepted here.
+
+The runner is specific to this Mac's agent-session allocator, Chrome and an installed Playwright Core module. It is not a portable cloud computer service. See [BROWSER_ACTIONS.md](BROWSER_ACTIONS.md) for setup and the exact boundaries.
+
+## The HTTP milestone: preserved and working
 
 **A result from one worker becomes the next worker’s verified input.** From Relay’s “One request. Two dispatchers.” panel:
 
@@ -19,9 +29,9 @@ The target includes multiple responders and mission-long listening, potentially 
 3. Dispatcher B reads A’s ticket back from the destination. It uses the confirmed ticket’s ID and title to submit a linked follow-up, then reads back that second receipt.
 4. Relay shows both destination-issued IDs, their dependency, timestamps and the final result. The receipts survive reload and restart; the evidence can be downloaded.
 
-This is the first verified execution handoff beyond the app’s simulated emergency connectors. The workers are fixed application workflows with separate credentials. They are not model-selected autonomous workers, browser-clicking computers or real emergency-service integrations. This flow is manually triggered and stored alongside its mission; mission reports do not automatically launch it yet.
+This is the first verified execution handoff beyond the app’s simulated emergency connectors. The workers are fixed application workflows with separate credentials. The original HTTP workers are not model-selected autonomous workers or real emergency-service integrations. The optional browser mode described above changes how A submits; B remains an HTTP worker. This flow is manually triggered and stored alongside its mission; mission reports do not automatically launch it yet.
 
-That boundary matters to the central idea: shared context is useful when it leads to accountable action, and coordination is meaningful when one worker can rely on another’s confirmed result. The next integration step is to connect a source-linked mission proposal to this controlled execution path, preserving human approval, rather than merely adding more independent workers.
+That boundary matters to the central idea: shared context is useful when it leads to accountable action, and coordination is meaningful when one worker can rely on another’s confirmed result. The next integration step is to connect a source-linked mission proposal to this controlled execution path, with an explicit policy for which controlled actions can run automatically and which require review.
 
 ## What changed while you were away
 
@@ -31,6 +41,7 @@ That boundary matters to the central idea: shared context is useful when it lead
 | Immediate saving | Reports/audio persist before AI finishes; background progress and retry remain visible. | Incoming context does not wait on model latency. |
 | Mission planning | Gemini proposes source-linked resource requests and team updates; emergency delivery remains simulated. | Turns changing context into reviewable proposed work. |
 | Real test execution — new | A submits a ticket; B verifies it and submits a dependent follow-up; the destination creates both receipts. | Proves an actual action/result handoff. |
+| Browser execution — new | A fills and submits the controlled form; Relay shows screenshots and real receipts. | Adds a computer interface to the verified action/result chain. |
 | Recovery — extended | Stable request IDs, failure states, retry and restart preserve results without duplicate submissions. | Workers can recover without inventing success or repeating actions. |
 | Interface — extended | New test panel, receipt evidence/download, readable dark-theme cards and corrected lost-response recovery. | Makes the action chain understandable to someone returning to the project. |
 | Continuous input | Browser segmentation and managed Vexo listening, outbox delivery, silence handling and retry. | Supports repeated reports; longer and simultaneous multi-band acceptance remain open. |
@@ -38,7 +49,9 @@ That boundary matters to the central idea: shared context is useful when it lead
 
 ## Evidence, separated by scope
 
-**This execution checkpoint:** production build/type checks and all **68 Node tests passed**. The ten added execution tests use real local HTTP servers and cover ordering/dependencies, repeated requests, lost acknowledgments, resumed in-progress state, malformed or mismatched receipts, redirects, authorization and disabled configuration.
+**This browser checkpoint:** production build/type checks and all **70 Node tests passed** on the final repaired source. Independent owned-Chrome acceptance covered a successful form submission, cross-origin 307/302 redirects, a same-origin 307 redirect and setup failure cleanup. All five scenarios passed; redirect targets received zero requests. The full Relay UI chain produced one destination ticket and one linked follow-up. Both services restarted, the page reloaded, and receipt IDs and screenshot hashes remained identical. Replaying the same request returned the same result; changing its title returned HTTP 409. Unauthorized and wrong-worker writes returned 401; an unsupported evidence filename returned 404. The final UI screenshot was visually inspected. See [browser verification](docs/verification/browser-actions-2026-11-14.json).
+
+**The previous HTTP execution checkpoint:** production build/type checks and all **68 Node tests passed**. The ten added execution tests use real local HTTP servers and cover ordering/dependencies, repeated requests, lost acknowledgments, resumed in-progress state, malformed or mismatched receipts, redirects, authorization and disabled configuration.
 
 Independent browser acceptance used a fresh fictional mission and separate Relay/Test Desk processes. Displayed receipts matched the destination’s saved files. Both processes were restarted and the same receipts remained. Taking the destination offline produced a visible failure with no invented ticket or follow-up; restoring it and retrying recovered the same run.
 
@@ -54,7 +67,9 @@ Example final accepted run: `c29d8a59-dabe-4daf-bce8-4e5b630e39a8`. Destination 
 
 Current mission path: Vexo → laptop bridge → Relay’s durable mission intake → Gemini transcription/extraction/planning → proposed action → human approval → simulated emergency connector → saved receipt and dashboard.
 
-New opt-in execution path: Relay panel → durable test-workflow record → Dispatcher A → separate Test Desk ticket → Dispatcher B reads the confirmed result → linked follow-up → both real test receipts back in Relay.
+Opt-in HTTP execution path: Relay panel → durable test-workflow record → Dispatcher A → separate Test Desk ticket → Dispatcher B reads the confirmed result → linked follow-up → both real test receipts back in Relay.
+
+Optional browser path: Relay panel → allocated agent-owned Chrome → filled Test Desk form and Submit click → destination-issued ticket → B’s verified HTTP follow-up → saved receipts and before/after screenshots. Browser-initiated requests pass through a routing handler that supplies the worker credential and rejects redirects.
 
 The server owns mission context; the browser displays it. The laptop owns Bluetooth. The test workflow has its own storage directory and performs network calls outside the mission-store write lock. A single process owns each data directory. It does not alter existing mission reports or simulated emergency actions.
 
@@ -63,7 +78,7 @@ The server owns mission context; the browser displays it. The laptop owns Blueto
 - Connect mission-derived, source-linked proposals to the verified execution workflow with appropriate review. The current test request is entered manually.
 - Complete longer and simultaneous multi-responder physical acceptance, including a clearly recognized follow-up after restart.
 - Validate a chosen hosted deployment and remote bridge together. Deployment files are not proof of public operation.
-- Add real outside service/browser integrations only as separately verified connectors. Email, actual emergency dispatch and generic computer operation are not part of this checkpoint. Separate browser-execution experiments are not included here.
+- Expand beyond the fixed local Test Desk form only as separately verified connectors. Email, actual emergency dispatch, generic autonomous computer operation and cloud-hosted browser execution are not part of this checkpoint.
 - Complete presentation/submission work in its owning workstreams. This push does not merge the default branch, change repository visibility or publish a stable release.
 
 Vexo and Gemini remain the core product contributions. MiniMax and Deepgram are optional adapters. No Meta runtime integration is claimed. Optional Antigravity work remains separate in [PR #4](https://github.com/JakAcos/vexohacks/pull/4).
@@ -78,10 +93,12 @@ npm run demo:test-dispatch
 
 Open `http://127.0.0.1:14317/?incidentId=test-dispatch-demo#test-dispatch`. The launcher starts its own two local processes, uses synthetic data and generated worker credentials, and refuses occupied ports. It does not operate the band or call AI providers. Stop with Ctrl+C; restarting preserves receipts. Read [TEST_DISPATCH.md](TEST_DISPATCH.md) for ports, configuration, API contracts and recovery.
 
+For browser mode, follow [BROWSER_ACTIONS.md](BROWSER_ACTIONS.md); it requires the host allocator and a trusted installed Playwright Core module. Plain `demo:test-dispatch` remains HTTP unless `RELAY_BROWSER_AGENT_ID` is set.
+
 For the original mission flow use [README](README.md), [Vexo setup](VEXO_LIVE_BRIDGE.md) and [cloud preparation](CLOUD_DEPLOYMENT.md).
 
 ## GitHub checkpoint
 
-Branch: `checkpoint/relay-working-2026-11-14`; [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5). The original checkpoint remains in history, followed by this verified milestone and updated catch-up. GitHub’s existing workflow publishes handoff information; it does not run application tests.
+Browser branch: `checkpoint/relay-browser-actions-2026-11-14`, based on HTTP commit `dc506a8`. The HTTP branch and [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5) are unchanged. Browser execution has its own review branch, preserving both milestones independently. GitHub’s existing workflow publishes handoff information; it does not run application tests.
 
 Included: source, tests, dependency lockfile, setup documentation and a deliberately reviewed synthetic verification summary. Excluded: credentials, generated test data, real speech, mission records, screenshots, caches, dependencies, compiled bundles and ZIPs. Both Git and Docker ignore the generated test credential/data directories. The shared live demo was not modified by this publication.

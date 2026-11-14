@@ -1,0 +1,157 @@
+{
+  "preparedBy": "Codex; agent-authored acceptance, not human review",
+  "date": "2026-11-14",
+  "baseCommit": "dc506a835a042ea2848987782562e4e109c8e3a4",
+  "branch": "checkpoint/relay-browser-actions-2026-11-14",
+  "checks": {
+    "nodeTests": {
+      "passed": 70,
+      "failed": 0
+    },
+    "productionBuild": "passed",
+    "realRelayUiToBrowserToFollowup": "passed",
+    "independentDestinationReceiptComparison": "passed",
+    "bothProcessesRestarted": "passed",
+    "pageReload": "passed",
+    "sameReceiptIdsAndImageHashesAfterRestart": true,
+    "unauthenticatedWrite": 401,
+    "wrongWorkerWrite": 401,
+    "unsupportedEvidenceFile": 404,
+    "visualInspection": "passed",
+    "replay": {
+      "replayStatus": 202,
+      "changedPayloadStatus": 409,
+      "runs": 1,
+      "originalReceiptIdsPreserved": true
+    },
+    "browserRedirectsAndCleanup": {
+      "checks": [
+        {
+          "scenario": "success",
+          "passed": true
+        },
+        {
+          "scenario": "external-307",
+          "passed": true
+        },
+        {
+          "scenario": "external-302",
+          "passed": true
+        },
+        {
+          "scenario": "same-origin-307",
+          "passed": true
+        },
+        {
+          "scenario": "setup-failure-closes-owned-page",
+          "passed": true
+        }
+      ],
+      "authorizedBrowserSubmissions": 4,
+      "redirectDestinationRequests": 0,
+      "credentialsLeaked": false,
+      "originalOwnedPageCountPreserved": true
+    }
+  },
+  "syntheticRun": {
+    "runId": "fee51dcd-cc6a-4897-b449-d4501cc60b7f",
+    "ticket": {
+      "id": "d2a2b8cd-342a-406e-b612-5ffa9bf8e365",
+      "runId": "fee51dcd-cc6a-4897-b449-d4501cc60b7f",
+      "missionId": "browser-independent-acceptance",
+      "acceptedAt": "2026-11-14T22:24:45.387Z",
+      "destination": "Relay Test Desk",
+      "test": true,
+      "kind": "ticket",
+      "title": "Confirm supply pickup at the test staging desk"
+    },
+    "followUp": {
+      "id": "7dc20932-3215-428c-bd58-5cb32d49c00b",
+      "runId": "fee51dcd-cc6a-4897-b449-d4501cc60b7f",
+      "missionId": "browser-independent-acceptance",
+      "acceptedAt": "2026-11-14T22:24:45.662Z",
+      "destination": "Relay Test Desk",
+      "test": true,
+      "kind": "follow_up",
+      "sourceReceiptId": "d2a2b8cd-342a-406e-b612-5ffa9bf8e365",
+      "message": "Ticket d2a2b8cd-342a-406e-b612-5ffa9bf8e365 accepted for \u201cConfirm supply pickup at the test staging desk\u201d. Follow-up recorded by Dispatcher B."
+    },
+    "images": {
+      "before": {
+        "sha256": "d6efbf7345cf6c53348de442337eb690b3751619a5f86e61e9cf2fc9cc153d25",
+        "bytes": 43657
+      },
+      "after": {
+        "sha256": "6492a9e8c063cbac14a55b2e0e738d3ebd5897b77727841b1caff56c65024a9a",
+        "bytes": 76138
+      }
+    },
+    "destinationRecordCount": 2
+  },
+  "sourceFiles": [
+    {
+      "path": "src/server/test-dispatch.ts",
+      "sha256": "d30e9e802e2c716aa4679d398480c3e86b14b1d5d0e778b886f9e569615ba9b2"
+    },
+    {
+      "path": "src/server/browser-ticket.ts",
+      "sha256": "06d5ab877b6d5966dd1ad9c9682816e5db0a06fa6841aace7b21b551acbdfdd7"
+    },
+    {
+      "path": "src/server/test-desk.ts",
+      "sha256": "5233e500a4f2dc7cf5d338299b244e90faf99caf2466b6a7be1625a785de3bbd"
+    },
+    {
+      "path": "src/server/test-desk-form.ts",
+      "sha256": "61b5049a20aa9508a74c20969dcb225d58c5f714565393e944add3870c143842"
+    },
+    {
+      "path": "src/shared/test-dispatch.ts",
+      "sha256": "d1e1cbcdeb4ac596c7734df075e6caed044de56d494a9e65a92c97dc03033c04"
+    },
+    {
+      "path": "src/client/test-dispatch.css",
+      "sha256": "ee39a8cc711f9175ae9f380dc403126de43d6d5677639ba01335667d79f74fa8"
+    },
+    {
+      "path": "src/client/TestDispatch.tsx",
+      "sha256": "505f211102c40fa1fc24a81cbc4d66a162c3deff6e840e656ddd8537354a994c"
+    },
+    {
+      "path": "tests/test-dispatch.test.ts",
+      "sha256": "7bd1458ba3fcd997ccb13449dff8a28a579008cd9f8bf31db8bf6468fe53fdc9"
+    },
+    {
+      "path": "BROWSER_ACTIONS.md",
+      "sha256": "e517c5f046cd567c73761668992b014d61e29b48a90200d8c04ce29ae520ab28"
+    },
+    {
+      "path": "scripts/test-browser-redirects.mjs",
+      "sha256": "d6b5ab7e1d5f0897cb9dadc922656b2696787a40148ae201845ab308fe1f0087"
+    },
+    {
+      "path": "README.md",
+      "sha256": "89077d09749ce76366d017dabee932e71a763388f88b0ce8295d912e4e81d24c"
+    },
+    {
+      "path": "CHECKPOINT_HANDOFF.md",
+      "sha256": "4e3bc65548aaa42f2feea0ee7654d0c6bb22443e2f5165cd0f862ca80d6d7ba2"
+    }
+  ],
+  "limitations": [
+    "Manually triggered fixed test workflow; no AI action selection.",
+    "A uses the controlled browser form; B uses HTTP.",
+    "Browser requests are forwarded through Playwright route.fetch with redirects disabled.",
+    "Host-specific owned-browser allocator and installed Playwright Core required.",
+    "No physical-band, paid-provider, live emergency or cloud browser execution in this acceptance."
+  ],
+  "exclusions": [
+    "credentials",
+    "real mission records",
+    "recordings",
+    "screenshots",
+    "generated data",
+    "build outputs",
+    "node_modules"
+  ]
+}
