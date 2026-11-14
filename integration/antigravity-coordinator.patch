@@ -1,0 +1,79 @@
+--- a/src/server/orchestrator.ts
++++ b/src/server/orchestrator.ts
+@@ -1,5 +1,6 @@
+ import { randomUUID } from "node:crypto";
+ import { z } from "zod";
++import { antigravityPlan } from "./antigravity.js";
+ import type { Incident, MissionAction, Observation, Mode } from "../shared/model.js";
+ 
+ const planSchema = z.object({ actions: z.array(z.object({
+@@ -8,7 +9,7 @@
+   title: z.string().min(1).max(120),
+   detail: z.string().min(1).max(1000),
+ }).strict()).max(4) }).strict();
+-type Proposal = z.infer<typeof planSchema>["actions"][number];
++type Proposal = z.infer<typeof planSchema>["actions"][number] & {sourceObservationIds?: string[]};
+ 
+ export function audit(state: Incident, agent: "coordinator" | "dispatcher" | "service", message: string, actionId?: string) {
+   state.agentEvents.push({ id: randomUUID(), agent, message, actionId, timestamp: new Date().toISOString() });
+@@ -56,6 +57,15 @@
+ }
+ 
+ export async function modelPlan(state: Incident, observation: Observation): Promise<Proposal[]> {
++  const provider = process.env.COORDINATOR_PROVIDER ?? "gemini";
++  if (provider === "antigravity") {
++    const result = await antigravityPlan(state, observation.id, {
++      onReceipt: receipt => audit(state, "coordinator", `Antigravity ${receipt.tool}: ${receipt.summary} [${receipt.interactionId}]`),
++    });
++    for (const warning of result.cleanupWarnings) audit(state, "coordinator", `Antigravity: ${warning}`);
++    return result.actions;
++  }
++  if (provider !== "gemini") throw new Error("Unknown coordinator provider.");
+   const key = process.env.GEMINI_API_KEY, model = process.env.GEMINI_MODEL;
+   if (!key || !model) throw new Error("Gemini coordinator is not configured.");
+   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+@@ -82,14 +92,15 @@
+ }
+ 
+ export async function coordinate(state: Incident, observation: Observation, mode: Mode) {
++  const planner = mode === "gemini" ? (process.env.COORDINATOR_PROVIDER === "antigravity" ? "Antigravity coordinator" : "Gemini coordinator") : "Demo rules coordinator";
+   let proposals: Proposal[];
+   try { proposals = mode === "gemini" ? await modelPlan(state, observation) : demoPlan(observation); }
+   catch {
+     // Context must survive a planning outage. Never silently impersonate a live model.
+-    audit(state, "coordinator", "Report saved. Gemini action planning failed; review this report and use Retry planning. No fallback actions were executed.");
++    audit(state, "coordinator", `Report saved. ${planner} action planning failed; review this report and use Retry planning. No fallback actions were executed.`);
+     return;
+   }
+-  audit(state, "coordinator", `${mode === "gemini" ? "Gemini coordinator" : "Demo rules coordinator"} reviewed ${observation.speaker}'s report; ${proposals.length} proposed action(s).`);
++  audit(state, "coordinator", `${planner} reviewed ${observation.speaker}'s report; ${proposals.length} proposed action(s).`);
+   for (const proposal of proposals) {
+     if ((proposal.kind === "team_update") !== (proposal.service === "team")) continue;
+     // A given report has at most one action per kind/service, even after retry.
+@@ -97,13 +108,13 @@
+     if (sameReport) continue;
+     const existing = proposal.kind === "service_request" && state.actions.find(a => a.kind === proposal.kind && a.service === proposal.service && a.status !== "dismissed");
+     if (existing) {
+-      existing.sourceObservationIds.push(observation.id);
++      existing.sourceObservationIds = [...new Set([...existing.sourceObservationIds, ...(proposal.sourceObservationIds ?? [observation.id])])];
+       existing.updatedAt = new Date().toISOString();
+       audit(state, "coordinator", `Linked the new report to the existing ${proposal.service} request; no duplicate delivery.`, existing.id);
+       continue;
+     }
+     const timestamp = new Date().toISOString();
+-    const action: MissionAction = { ...proposal, id: randomUUID(), sourceObservationIds: [observation.id], status: "proposed", createdAt: timestamp, updatedAt: timestamp };
++    const action: MissionAction = { ...proposal, id: randomUUID(), sourceObservationIds: proposal.sourceObservationIds ?? [observation.id], status: "proposed", createdAt: timestamp, updatedAt: timestamp };
+     state.actions.push(action);
+     audit(state, "coordinator", `${action.title}${action.kind === "service_request" ? " · awaiting dispatcher approval" : " · sending to mission team"}`, action.id);
+     if (action.kind === "team_update") deliverSimulated(state, action);
+--- a/src/server/app.ts
++++ b/src/server/app.ts
+@@ -81,7 +81,7 @@
+             : "deterministic scenario parser",
+         tracker: "evidence-based state reducer",
+         briefing: "source-based template",
+-        coordinator: mode === "gemini" ? "Gemini action planner" : "deterministic demo action planner",
++        coordinator: mode === "gemini" ? (process.env.COORDINATOR_PROVIDER === "antigravity" ? "Antigravity mission agent" : "Gemini action planner") : "deterministic demo action planner",
+         executor: "local simulated service connectors with durable receipts",
+       },
+       geminiConfigured: Boolean(

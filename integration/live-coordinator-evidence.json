@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "fixture": "Synthetic pre-extracted text; real Antigravity coordinator; simulated connectors; no wearable or audio test",
+  "elapsedMs": 22333,
+  "actions": [
+    {
+      "kind": "service_request",
+      "service": "ems",
+      "title": "Recommended EMS dispatch for two injured individuals",
+      "detail": "Recommended EMS response for dispatcher review: Officer A reports two people with injuries after a collision, both speaking, and notes no ambulance is on scene. This is an inferred recommendation based on reported injuries and lack of EMS on scene; exact injury severity and medical needs remain uncertain.",
+      "sourceObservationIds": [
+        "fictional-r1"
+      ],
+      "id": "36d472ff-f53b-4823-ae18-6591016b8a93",
+      "status": "proposed",
+      "createdAt": "2026-11-14T20:48:04.577Z",
+      "updatedAt": "2026-11-14T20:48:04.577Z"
+    },
+    {
+      "kind": "team_update",
+      "service": "team",
+      "title": "Collision with two reported injuries; no ambulance on scene",
+      "detail": "Officer A reports two people with injuries following a collision; both are speaking and no ambulance is currently on scene. Injury severity and additional scene details are not yet confirmed.",
+      "sourceObservationIds": [
+        "fictional-r1"
+      ],
+      "id": "a301e750-c340-40b2-8801-d67fcdd30ea1",
+      "status": "acknowledged",
+      "createdAt": "2026-11-14T20:48:04.577Z",
+      "updatedAt": "2026-11-14T20:48:04.577Z",
+      "receipt": {
+        "id": "sim-a301e750-c340-40b2-8801-d67fcdd30ea1",
+        "service": "Mission team feed",
+        "timestamp": "2026-11-14T20:48:04.577Z",
+        "simulated": true,
+        "message": "Update delivered to the simulated mission team feed."
+      }
+    }
+  ],
+  "agentEvents": [
+    {
+      "id": "cdbf520e-92f8-47e8-ad8e-a5989322295c",
+      "agent": "coordinator",
+      "message": "Antigravity read_mission_context: Read mission version 1: 1 source reports. [v1_Chc3OGo0YW9tSk5hVzAxTWtQZ3RlbHNRURIXNzhqNGFvbUpOYVcwMU1rUGd0ZWxzUVE]",
+      "timestamp": "2026-11-14T20:47:47.808Z"
+    },
+    {
+      "id": "9b153e1e-397e-4d58-aad3-6736807bc70a",
+      "agent": "coordinator",
+      "message": "Antigravity propose_actions: 2 source-linked proposal(s) validated. Nothing dispatched. [v1_Chc3OGo0YW9tSk5hVzAxTWtQZ3RlbHNRURIXOU1qNGFvNmNBNHJKLThZUGphMngwUUU]",
+      "timestamp": "2026-11-14T20:48:01.222Z"
+    },
+    {
+      "id": "d4a01a93-db11-4ea4-9bfb-97e5893098b4",
+      "agent": "coordinator",
+      "message": "Antigravity coordinator reviewed Officer A's report; 2 proposed action(s).",
+      "timestamp": "2026-11-14T20:48:04.577Z"
+    },
+    {
+      "id": "f32c31d9-588d-495e-b7f5-8ad74b14312e",
+      "agent": "coordinator",
+      "message": "Recommended EMS dispatch for two injured individuals · awaiting dispatcher approval",
+      "actionId": "36d472ff-f53b-4823-ae18-6591016b8a93",
+      "timestamp": "2026-11-14T20:48:04.577Z"
+    },
+    {
+      "id": "10542fb8-3e8a-4479-8da7-82a8cef3714b",
+      "agent": "coordinator",
+      "message": "Collision with two reported injuries; no ambulance on scene · sending to mission team",
+      "actionId": "a301e750-c340-40b2-8801-d67fcdd30ea1",
+      "timestamp": "2026-11-14T20:48:04.577Z"
+    },
+    {
+      "id": "eb64df1e-5558-4fd5-8f87-c30d317a4050",
+      "agent": "service",
+      "message": "Update delivered to the simulated mission team feed.",
+      "actionId": "a301e750-c340-40b2-8801-d67fcdd30ea1",
+      "timestamp": "2026-11-14T20:48:04.578Z"
+    }
+  ]
+}
