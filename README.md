@@ -217,3 +217,7 @@ The band would connect through a **verified phone or laptop bridge**; the suppor
 The target is for a spoken observation to change the shared incident picture within seconds, with sources and uncertainty visible while the firefighter's hands remain free. Briefings should reflect later updates without erasing earlier reports, and handovers require human approval.
 
 Latency has **not been measured**. End-to-end behavior and hardware compatibility must be tested before claiming the prototype meets these criteria.
+
+## Optional Antigravity coordinator
+
+The [Antigravity integration guide](ANTIGRAVITY.md) documents a tested mission-planning adapter, actual provider tool receipts, sponsor roles and judge demo steps. It includes an exact patch for the newer mission-orchestrator release; this branch does not enable it automatically. Live synthetic checks and their limits are recorded in the guide.
