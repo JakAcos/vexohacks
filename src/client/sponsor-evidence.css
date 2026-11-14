@@ -1,0 +1,24 @@
+.sponsor-evidence{margin:24px 0;padding:24px;border:1px solid #35494b;border-radius:16px;background:#132326;color:#edf6f2;min-width:0}
+.sponsor-heading,.sponsor-card-title{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sponsor-evidence h2{font-size:23px;line-height:1.25;margin:6px 0 0;color:#edf6f2}
+.sponsor-evidence h3{font-size:20px;margin:0;color:#edf6f2}
+.sponsor-kicker{font-size:11px;font-weight:700;letter-spacing:.12em;color:#8de0bd;margin:0}
+.sponsor-feed,.sponsor-meta,.sponsor-footnote{font-size:12px;line-height:1.55;color:#b4c9c4}
+.sponsor-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.sponsor-card{padding:20px;border:1px solid #48615e;border-radius:12px;background:#1b3031;min-width:0}
+.sponsor-card>p{line-height:1.5}
+.sponsor-badge{font-size:11px;line-height:1.4;padding:5px 9px;border-radius:20px;background:#354849;color:#e0ebe7}
+.sponsor-recorded{background:#244d40;color:#a8efcc}
+.sponsor-result{font-size:16px;display:block;margin-top:20px;color:#fff}
+.sponsor-receipt{border-top:1px solid #48615e;margin-top:18px;padding-top:12px}
+.sponsor-receipt summary{cursor:pointer;color:#9de7c7;font-size:13px;font-weight:650}
+.sponsor-receipt blockquote{margin:12px 0;padding-left:12px;border-left:2px solid #8de0bd;font-size:14px;color:#edf6f2;line-height:1.5;overflow-wrap:anywhere}
+.sponsor-receipt ul{padding-left:18px;font-size:13px;line-height:1.6}
+.sponsor-receipt li{color:#edf6f2}
+.sponsor-receipt li span{color:#b4c9c4}
+.sponsor-receipt .sponsor-meta{overflow-wrap:anywhere}
+.sponsor-latest{margin-top:16px;padding:14px 16px;border-radius:8px;background:#0d1b1e;font-size:13px;line-height:1.6}
+.sponsor-latest>span{display:block;color:#91b9ac;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.sponsor-latest p{margin:6px 0 0;overflow-wrap:anywhere}
+.sponsor-footnote{margin:14px 0 0}
+@media(max-width:720px){.sponsor-evidence{padding:16px}.sponsor-cards{grid-template-columns:1fr}.sponsor-evidence h2{font-size:20px}.sponsor-card{padding:16px}}
