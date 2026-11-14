@@ -12,6 +12,8 @@ permissions:
 
 jobs:
   handoff:
+    # Issue 2 is the shared team's handoff inbox, not an inbox in mirrors/forks.
+    if: github.repository == 'JakAcos/vexohacks'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

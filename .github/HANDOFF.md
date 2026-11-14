@@ -2,6 +2,8 @@
 
 The `Push teammate handoff` GitHub Actions workflow posts to https://github.com/JakAcos/vexohacks/issues/2 after branch pushes. Teammates should subscribe to that issue. Reports are automatically prepared, not human-reviewed.
 
+The posting job runs only in `JakAcos/vexohacks`. Mirrors retain the workflow but skip the job, so a similarly numbered issue in another repository cannot receive the team's reports. See [TEAM_STATUS.md](../TEAM_STATUS.md) for the synchronized checkpoint in both repositories.
+
 For useful reasoning and next steps, include these lines in commit bodies before pushing. Claude and other coding agents should follow the same format:
 
 ```
