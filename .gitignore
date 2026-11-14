@@ -17,3 +17,5 @@ cloud.env
 *.intake-tmp
 .test-dispatch-demo/
 test-desk-data/
+
+.mission-execution-demo/

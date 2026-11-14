@@ -6,7 +6,15 @@ Start with the [three-hour catch-up and exact checkpoint status](CHECKPOINT_HAND
 
 Relay brings responder context into one shared mission, then coordinates source-linked actions from that context. Police, firefighters, EMS and the 911 dispatcher contribute to the same mission record. The dashboard shows what was reported, what changed, what the coordinator requested, and what the service returned.
 
-**Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Service execution uses local simulated connectors: no real emergency units, emails or external services are contacted. Implementation and this documentation are AI-assisted.
+**Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Emergency-service execution uses simulated connectors. The optional test workflows contact a real controlled local Test Desk; no emergency units or emails are contacted. Implementation and this documentation are AI-assisted.
+
+## Mission-driven test execution
+
+The optional [mission-execution milestone](MISSION_EXECUTION.md) connects shared context to real controlled action. Gemini chooses a test request from a mission report; Relay submits its full title/detail and verifies the destination ticket. A separate Gemini receipt-agent call uses that confirmed result and the latest mission context to plan a linked follow-up. The service issues both receipts, and the mission screen preserves their source/action links.
+
+The final source passed an independent build and 79 Node tests. Live Gemini acceptance used a labeled synthetic source fixture; complete request detail, receipt dependency, cancellation, retry and restart were checked. This is not yet a fresh physical-band-to-action acceptance. The separate [browser milestone in PR #6](https://github.com/JakAcos/vexohacks/pull/6) is not integrated into this branch.
+
+After installing dependencies and building, configure Gemini privately and run `npm run mission:demo`. It starts separate local test processes and does not start a microphone. See the [catch-up](CHECKPOINT_HANDOFF.md) and [structured verification](docs/verification/mission-execution-2026-11-14.json) for exact evidence and remaining work.
 
 ## Verified dispatcher handoff
 

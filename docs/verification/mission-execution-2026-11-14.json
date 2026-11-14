@@ -1,0 +1,218 @@
+{
+  "preparedBy": "Codex; agent-authored acceptance, human review pending",
+  "date": "2026-11-14",
+  "baseCommit": "dc506a835a042ea2848987782562e4e109c8e3a4",
+  "branch": "checkpoint/relay-mission-execution-2026-11-14",
+  "independentReleaseChecks": {
+    "productionBuild": "passed",
+    "nodeTests": {
+      "passed": 79,
+      "failed": 0
+    },
+    "reviewedSourceFiles": 19,
+    "byteIdenticalCompiledFiles": 25,
+    "fullRequestDestinationComparison": "passed",
+    "sourceActionReceiptLineage": "passed",
+    "finalMissionUiVisualInspection": "passed",
+    "finalReceiptsUnchangedAfterRestart": true,
+    "servedBuildAssetsMatch": 3,
+    "sourceBannerScopedToCorrectTarget": true,
+    "bandStartControlsAbsent": true
+  },
+  "liveIntegrationAcceptance": {
+    "performedBy": "Source-test coordination chat, separately reviewed by release chat",
+    "actualGemini": true,
+    "physicalCaptureClaim": false,
+    "input": "Explicitly labeled synthetic source fixture shaped to exercise the band-report follower",
+    "checks": {
+      "ignoredHistoryPreArmPendingWrongBandTypedDemoFailed": true,
+      "sourceObservationLinked": true,
+      "geminiReceiptFollowUp": true,
+      "completedActionRetryUnchanged": true,
+      "cancellationNoNewTestRequest": true,
+      "requestDetailsDeliveredExactly": true,
+      "quantityAndLocationDelivered": true,
+      "exactlyTwoMatchingDestinationReceipts": true,
+      "priorReportsAndReceiptsSurvivedRestart": true
+    }
+  },
+  "finalSyntheticRun": {
+    "mission": "auto-follower-final",
+    "observations": 2,
+    "testActions": 2,
+    "destinationRecordsForMission": 2,
+    "source": {
+      "id": "ebf19468-ed11-4d52-b8d4-1ff3569cba73",
+      "clientEventId": "6628f8ef-742b-50da-be73-f3a9a31625b4",
+      "speaker": "Synthetic fixture",
+      "text": "We need twelve spare radio batteries at staging area Charlie for the training exercise. Please record the supply request and confirm it in the mission log.",
+      "importedFrom": {
+        "missionId": "follower-acceptance",
+        "observationId": "6628f8ef-742b-50da-be73-f3a9a31625b4"
+      }
+    },
+    "parent": {
+      "id": "28cb9d58-553d-41cc-b6be-dba94477e5aa",
+      "title": "Radio batteries request",
+      "detail": "12 spare radio batteries needed at staging area Charlie for training exercise.",
+      "sourceObservationIds": [
+        "ebf19468-ed11-4d52-b8d4-1ff3569cba73"
+      ],
+      "ticket": {
+        "id": "9419de13-8716-4c12-83ce-b9f0f7f6fe07",
+        "runId": "28cb9d58-553d-41cc-b6be-dba94477e5aa",
+        "missionId": "auto-follower-final",
+        "acceptedAt": "2026-11-14T22:37:57.206Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "ticket",
+        "title": "Radio batteries request",
+        "detail": "12 spare radio batteries needed at staging area Charlie for training exercise."
+      }
+    },
+    "child": {
+      "id": "0a3ea4a3-1906-4ed9-885c-31eb2cab7121",
+      "detail": "Receipt 9419de13-8716-4c12-83ce-b9f0f7f6fe07 confirmed by Relay Test Desk for the test ticket requesting 12 spare radio batteries at staging area Charlie for a training exercise. Please perform a test tracking check to confirm the ticket status in the exercise log.",
+      "sourceObservationIds": [
+        "ebf19468-ed11-4d52-b8d4-1ff3569cba73"
+      ],
+      "parentActionId": "28cb9d58-553d-41cc-b6be-dba94477e5aa",
+      "sourceReceiptId": "9419de13-8716-4c12-83ce-b9f0f7f6fe07",
+      "followUp": {
+        "id": "98db3665-cb05-4888-bbf7-ba1d11396a22",
+        "runId": "28cb9d58-553d-41cc-b6be-dba94477e5aa",
+        "missionId": "auto-follower-final",
+        "acceptedAt": "2026-11-14T22:38:01.928Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "follow_up",
+        "sourceReceiptId": "9419de13-8716-4c12-83ce-b9f0f7f6fe07",
+        "message": "Receipt 9419de13-8716-4c12-83ce-b9f0f7f6fe07 confirmed by Relay Test Desk for the test ticket requesting 12 spare radio batteries at staging area Charlie for a training exercise. Please perform a test tracking check to confirm the ticket status in the exercise log."
+      }
+    },
+    "checks": {
+      "exactDestinationReceiptFiles": true,
+      "fullTitleAndDetailPreserved": true,
+      "sourceToBothActionsLinked": true,
+      "confirmedReceiptUsedByNextAgent": true,
+      "physicalCaptureClaim": false
+    }
+  },
+  "limitations": [
+    "New physical-band-to-action run remains unverified.",
+    "Only allowlisted local test records execute automatically; actual emergency connectors remain simulated/reviewed.",
+    "Browser worker is separately published in PR6 and not integrated with mission-driven execution here.",
+    "No arbitrary tool URLs, commands, emails or real-world fulfillment.",
+    "Mission-long and simultaneous multi-band acceptance remain open."
+  ],
+  "sourceFiles": [
+    {
+      "path": "src/server/app.ts",
+      "sha256": "ee725c800282c03d063f7457d4b0db5d505f7a1952d307e25d1ae2a302f7c3cf"
+    },
+    {
+      "path": "src/server/orchestrator.ts",
+      "sha256": "97f14a9188206cc732939e7a30464652b2fe1186eaed24a1a44e18add2124668"
+    },
+    {
+      "path": "src/server/mission-executor.ts",
+      "sha256": "cded520af55351960d91ad563c3b20c0a48102fed1ce35f66cb2779927e2d4c8"
+    },
+    {
+      "path": "src/server/test-desk.ts",
+      "sha256": "d034f6c4ca7ba059422d732173ced805f43e78bf4da000eeed4a43211f56bcd6"
+    },
+    {
+      "path": "src/server/mission-tools.ts",
+      "sha256": "3e0aaff85fc1ee3f0a8657acba1c8adf680961542809f502dd711ecac8ae5280"
+    },
+    {
+      "path": "src/server/index.ts",
+      "sha256": "c2debbe7df1b03e249307967e371ddd4d9a6fbad01e3a8ba3a4f2a0a40ea9dc2"
+    },
+    {
+      "path": "src/server/mission-source.ts",
+      "sha256": "7f35abe088b9450183a04da9e4310b09f0b1f3aa6e975e469c605124d3bda6a1"
+    },
+    {
+      "path": "src/server/store.ts",
+      "sha256": "8f2a1fdc1dfbfa303c810f159194e72759a0a859ee93e263d37850f9297687c2"
+    },
+    {
+      "path": "src/shared/test-dispatch.ts",
+      "sha256": "3a86def56a8280fcf67985708170b906ba359b26eab65f1f242f4660efec7aaf"
+    },
+    {
+      "path": "src/shared/model.ts",
+      "sha256": "7825d753f63d5510d889300f898bd7e7e749228768ebe143e6d43cc98b626686"
+    },
+    {
+      "path": "src/client/main.tsx",
+      "sha256": "6167add8326d2f8ec764f08c7b1744b92a510f8827543ede21359e6d478ff2e7"
+    },
+    {
+      "path": "src/client/MissionActions.tsx",
+      "sha256": "72abb75b93c413831218e763ed6662729e8fbfd4c940a97b9186f9654b10bc8b"
+    },
+    {
+      "path": "src/client/MissionSourceStatus.tsx",
+      "sha256": "91aeb84b98d9bd2459e58485af0e9a32c904c758d0199a5a6a4657d19480eb20"
+    },
+    {
+      "path": "tests/mission-execution.test.ts",
+      "sha256": "1515a42c616694cfb6da1ac1c92565bdd007b82edc4ddbd426bfec3ce848c379"
+    },
+    {
+      "path": "scripts/mission-execution-demo.mjs",
+      "sha256": "7ca39b5aa493e563e19d549779bc20420ed75b729904271cf51948aba70d1fea"
+    },
+    {
+      "path": "package.json",
+      "sha256": "b0379129c8b4d2092fde6ef0978546cd1e64897b742223629fc0bcae255ab7de"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "66242f050cc944ef7346867f5067dd511a1e7f2d2e0d716c5e5073c622958137"
+    },
+    {
+      "path": ".dockerignore",
+      "sha256": "0bdf3245a80186349e3c14251e8609b9eb8f9ce72329141fa5dce39dc78e8bf6"
+    },
+    {
+      "path": "MISSION_EXECUTION.md",
+      "sha256": "56850f0768957e3fbcc3301e0653091ca15740e656190fb02437d18566c2c129"
+    },
+    {
+      "path": "README.md",
+      "sha256": "71caaa241f2d704619429848c41d915f68c5acbb6bf0b4537b57cae787b6397e"
+    },
+    {
+      "path": "CHECKPOINT_HANDOFF.md",
+      "sha256": "99f51c85e2e283a6ec4948ffba5533da6bf7fc41cc8af6f4ca0a1a2387b42aab"
+    }
+  ],
+  "exclusions": [
+    "credentials",
+    "real mission records",
+    "recordings",
+    "screenshots",
+    "generated data",
+    "build outputs",
+    "dependencies"
+  ],
+  "finalRuntimeReadiness": {
+    "source": {
+      "enabled": true,
+      "sourceMission": "band-auto-test",
+      "targetMission": "band-auto-test",
+      "origin": "http://127.0.0.1:3001",
+      "bandNumber": 38,
+      "baselineAt": "2026-11-14T22:40:00.090Z",
+      "imported": 0,
+      "lastCheckedAt": "2026-11-14T22:40:53.303Z",
+      "status": "following"
+    },
+    "bandStatus": "stopped",
+    "physicalAcceptanceEstablished": false
+  }
+}

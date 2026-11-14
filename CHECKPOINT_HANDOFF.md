@@ -1,87 +1,71 @@
 # Relay: the three-hour catch-up
 
-Updated November 14, 2026 after independent execution-milestone acceptance. Prepared by Codex; agent-authored, not human-reviewed. Delivered through [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5).
+Updated November 14, 2026 after the mission-driven execution milestone. Prepared by Codex; agent-authored, not human-reviewed.
 
 ## The central idea
 
 **R̳e̳l̳a̳y̳ i̳s̳ t̳h̳e̳ c̳e̳n̳t̳r̳a̳l̳ m̳i̳s̳s̳i̳o̳n̳ o̳r̳c̳h̳e̳s̳t̳r̳a̳t̳o̳r̳:̳ c̳o̳n̳t̳i̳n̳u̳o̳u̳s̳ c̳o̳n̳t̳e̳x̳t̳ f̳r̳o̳m̳ e̳v̳e̳r̳y̳ r̳e̳s̳p̳o̳n̳d̳e̳r̳’̳s̳ V̳e̳x̳o̳ b̳a̳n̳d̳ b̳e̳c̳o̳m̳e̳s̳ s̳h̳a̳r̳e̳d̳ u̳n̳d̳e̳r̳s̳t̳a̳n̳d̳i̳n̳g̳ a̳n̳d̳ c̳o̳o̳r̳d̳i̳n̳a̳t̳e̳d̳ a̳g̳e̳n̳t̳ a̳c̳t̳i̳o̳n̳s̳.̳**
 
-Dante’s product is a shared operating center for a mission. Police, firefighters, ambulance crews and the 911 dispatcher each contribute through a Vexo band. They leave it listening throughout the mission. Their reports and conversations accumulate in one mission-specific context. Agents there use the combined picture to communicate, request services and take useful actions. People should not have to repeatedly prompt the system or manage how its parts connect.
+Dante’s central idea is a shared operating center for a mission. Police, firefighters, EMS and the 911 dispatcher contribute through Vexo bands. Their ongoing reports accumulate in one mission-specific context. Agents use that combined picture to communicate, request services and act, without people repeatedly prompting or wiring the parts together. Multiple responders and mission-long listening, potentially two hours, remain the target.
 
-The target includes multiple responders and mission-long listening, potentially two hours. The current work proves parts of that vision: an earlier physical-band-to-Gemini path, a shared mission/approval system, and now a real, controlled two-worker execution chain. These have not yet been accepted as one continuous physical-band-to-external-action flow.
+## The latest milestone: context now leads to a real test action
 
-## The latest milestone: what actually works now
+The latest verified chain uses a new mission report as its trigger, rather than a manually entered dispatcher test request:
 
-**A result from one worker becomes the next worker’s verified input.** From Relay’s “One request. Two dispatchers.” panel:
+1. Relay saves the report and its source. An optional read-only follower can import new, completed reports from a separate mission without taking over its band or microphone.
+2. Gemini receives the current mission and the available test-service capability. It chooses a bounded test action, an ordinary simulated action, or no action.
+3. Relay saves the selected action and source links, then sends its **complete title and detail** to the controlled Test Desk. Quantity and location must survive in the destination-issued receipt.
+4. Relay validates and reads back that ticket. A separate Gemini receipt-agent call uses the confirmed result and current mission context to plan a dependent follow-up.
+5. Relay saves that decision before sending it. The destination verifies the ticket dependency, issues the follow-up receipt, and Relay reads it back. Both actions, receipts and source links appear together in the mission screen.
 
-1. A person enters a synthetic request and clicks **Run test dispatch**.
-2. Dispatcher A sends a real HTTP request to a separate local Relay Test Desk process. That destination saves a ticket and issues its receipt.
-3. Dispatcher B reads A’s ticket back from the destination. It uses the confirmed ticket’s ID and title to submit a linked follow-up, then reads back that second receipt.
-4. Relay shows both destination-issued IDs, their dependency, timestamps and the final result. The receipts survive reload and restart; the evidence can be downloaded.
+This is the closest tested implementation of the central idea so far: **shared context selects useful work, and one agent’s confirmed result becomes another agent’s input.** The action is a real test-service record. It does not establish that supplies were delivered or responders dispatched. Gemini chooses among bounded capabilities; it cannot select arbitrary destinations, commands or credentials.
 
-This is the first verified execution handoff beyond the app’s simulated emergency connectors. The workers are fixed application workflows with separate credentials. They are not model-selected autonomous workers, browser-clicking computers or real emergency-service integrations. This flow is manually triggered and stored alongside its mission; mission reports do not automatically launch it yet.
+## What actually works, and where
 
-That boundary matters to the central idea: shared context is useful when it leads to accountable action, and coordination is meaningful when one worker can rely on another’s confirmed result. The next integration step is to connect a source-linked mission proposal to this controlled execution path, preserving human approval, rather than merely adding more independent workers.
-
-## What changed while you were away
-
-| Area | Working capability | Relationship to the goal |
+| Piece | Proven behavior | Boundary |
 | --- | --- | --- |
-| Shared mission | Attributed reports, issues, approvals, actions and receipts, with live dashboard updates. | Gives the team one inspectable record. |
-| Immediate saving | Reports/audio persist before AI finishes; background progress and retry remain visible. | Incoming context does not wait on model latency. |
-| Mission planning | Gemini proposes source-linked resource requests and team updates; emergency delivery remains simulated. | Turns changing context into reviewable proposed work. |
-| Real test execution — new | A submits a ticket; B verifies it and submits a dependent follow-up; the destination creates both receipts. | Proves an actual action/result handoff. |
-| Recovery — extended | Stable request IDs, failure states, retry and restart preserve results without duplicate submissions. | Workers can recover without inventing success or repeating actions. |
-| Interface — extended | New test panel, receipt evidence/download, readable dark-theme cards and corrected lost-response recovery. | Makes the action chain understandable to someone returning to the project. |
-| Continuous input | Browser segmentation and managed Vexo listening, outbox delivery, silence handling and retry. | Supports repeated reports; longer and simultaneous multi-band acceptance remain open. |
-| Deployment preparation | Authenticated remote configuration, container/proxy setup and laptop bridge support. | Public hosting remains a separate acceptance step. |
+| Shared mission | Attributed reports, issues, source-linked actions, approval history and live updates. | Current structured scenarios emphasize the apartment-fire prototype. |
+| Durable intake | Reports/audio save before AI finishes; processing, failure and retry remain visible. | Browser audio not yet uploaded can still be lost on tab closure. |
+| Mission-driven execution — latest | Gemini selects a test action from a report; a separate Gemini call uses its confirmed receipt for a real follow-up. | Live acceptance used a labeled synthetic source and real Gemini, not fresh physical band capture. |
+| Full request transfer | Destination ticket preserves the selected title and detail; missing or mismatched details stop the next agent. | A confirmed test ticket records a request; it does not fulfill it. |
+| Recovery | Stable identities, saved follow-up decisions and durable receipts support retry and restart without duplication in the tested cases. | One backend process owns each data directory. |
+| Source follower | Baselines existing reports and unfinished jobs; imports only fresh completed reports with matching source/job metadata; replays do not duplicate them. | Device metadata comes from the bridge; it is not independent hardware attestation. |
+| HTTP dispatcher demo — PR #5 | Manually triggered A ticket → B independently verified follow-up; both receipts persist. | Fixed workflow, independent of mission-driven AI selection. |
+| Browser worker — PR #6 | A fills the controlled form and clicks Submit; B uses its real receipt. Relay shows before/after images and receipt evidence. | Separate verified branch; host-specific, fixed workflow. Not integrated with this mission-driven branch. |
+| Continuous input | Segmented browser capture, managed Vexo listening, outbox delivery and silence/retry handling. | Two-hour operation and simultaneous multi-band acceptance remain open. |
+| Deployment preparation | Authentication, container/proxy configuration and laptop-bridge setup. | Preparation is not proof of public hosted operation. |
 
-## Evidence, separated by scope
+## Evidence and its limits
 
-**This execution checkpoint:** production build/type checks and all **68 Node tests passed**. The ten added execution tests use real local HTTP servers and cover ordering/dependencies, repeated requests, lost acknowledgments, resumed in-progress state, malformed or mismatched receipts, redirects, authorization and disabled configuration.
+**This mission-driven source:** the release checkout independently passed its production build/type checks and **79 Node tests**. Coverage includes lost ticket and follow-up acknowledgments, receipt identity/detail validation, retry/restart identity, stale context, reset during model work, disabled capabilities and source history/provenance filters. Original simulation and HTTP workflow checks also passed.
 
-Independent browser acceptance used a fresh fictional mission and separate Relay/Test Desk processes. Displayed receipts matched the destination’s saved files. Both processes were restarted and the same receipts remained. Taking the destination offline produced a visible failure with no invented ticket or follow-up; restoring it and retrying recovered the same run.
+The source-test owner exercised the final candidate with **real Gemini** and a clearly labeled synthetic source fixture. Historical reports, audio already pending at arming, wrong-band, typed, demo-mode and failed reports were excluded in the source tests. A fresh logistics report led to a test ticket and receipt-dependent Gemini follow-up. Cancellation did not produce a new test request. The release review independently compared the final full request and both receipts with the destination’s saved files, checked source/action links and inspected the mission UI. Both final receipts remained identical after the owner restarted the candidate and switched it to the separate `band-auto-test` source. The release review checked this directly, and verified all three served web assets against its own build. Recording remained stopped, with zero reports imported from the newly armed physical source. This is readiness, not a fresh band acceptance. Final identifiers and restart/replay evidence are recorded in [structured verification](docs/verification/mission-execution-2026-11-14.json).
 
-The final UI’s lost-response regression held a real POST acknowledgment through **seven successful background polls**, then dropped it and temporarily blocked reconciliation reads. **Recover submission** reused the identical UUID and payload. The result remained one ticket/follow-up pair, and the stale error cleared. Across four intentional browser runs there were exactly eight destination receipts. The final panel was visually inspected. No model calls or physical recording occurred during these checks.
+**Earlier HTTP checkpoint `dc506a8`, PR #5:** 68 Node tests and build passed. Independent UI acceptance covered destination outage/retry, both-process restart, and a lost-response race held through seven background polls. Recovery reused the same UUID and payload. Four intentional runs produced exactly eight destination receipts. See [HTTP evidence](docs/verification/test-dispatch-2026-11-14.json).
 
-Example final accepted run: `c29d8a59-dabe-4daf-bce8-4e5b630e39a8`. Destination ticket: `143a63f8-b237-47b6-b0f9-617d2d545c28`. Follow-up: `78fb4999-3bc1-40d5-9332-a920d51187a6`. B’s `sourceReceiptId` exactly matches A’s ticket. See [structured verification](docs/verification/test-dispatch-2026-11-14.json).
+**Separate browser checkpoint `b6901ce`, PR #6:** 70 Node tests and build passed. Independent real-Chrome checks covered successful form submission, blocked same-/cross-origin redirects and cleanup after setup failure; redirect targets received zero requests. Relay’s complete browser-to-follow-up chain, saved receipt files, image hashes, process restart, page reload and replay passed. See [browser PR #6](https://github.com/JakAcos/vexohacks/pull/6). This branch does not contain that browser executor.
 
-**Previous source checkpoint `e316eaa`:** 58 Node tests, production build and real-process startup/restart checks passed. The unchanged Python bridge suite had 19 passes and one optional SDK decoder skip. Its fixes covered report ordering, duplicate retries, empty extraction, local-host access and the startup failure caused by treating band metadata as a mission. The audited earlier ZIP reproduced all 17 bundled app outputs; this Git branch also includes the later metadata repair.
+**Earlier physical evidence:** hardware owners observed band-38 audio reaching Gemini, source-linked proposals, a simulated team update and an approved simulated police receipt. A continuous session exceeded six minutes with 27 segments saved; a second intended spoken update was not recognized. These observations do not prove two-hour listening, simultaneous bands or the new physical-band-to-real-test-action chain. The unchanged bridge suite previously passed 19 tests with one optional SDK decoder skip.
 
-**Earlier live hardware evidence, not repeated here:** hardware and QA owners observed real band-38 audio reaching Gemini and creating source-linked mission proposals, a simulated team update and an approved simulated police receipt. A continuous session exceeded six minutes and all 27 segments were saved before a coordinated pause. A second intended update was not recognized in that test. Those results do not establish two-hour operation, simultaneous bands or this new external execution chain from physical speech.
+## How the parts fit together
 
-## Where context and actions live
+The server owns mission context; the browser displays it; the laptop owns Bluetooth. The new executor does network and model work outside the mission write lock. New reports can arrive while an action is running. A queued action whose context has changed is dismissed before submission; the receipt agent replans if context changes during reasoning. A retry after an uncertain submission keeps the original identity and saved payload.
 
-Current mission path: Vexo → laptop bridge → Relay’s durable mission intake → Gemini transcription/extraction/planning → proposed action → human approval → simulated emergency connector → saved receipt and dashboard.
+The original emergency path still ends in reviewed, simulated connectors. The new test path is opt-in and automatically creates only controlled test records. Browser execution is another independently verified capability, not yet part of the AI-selected mission path.
 
-New opt-in execution path: Relay panel → durable test-workflow record → Dispatcher A → separate Test Desk ticket → Dispatcher B reads the confirmed result → linked follow-up → both real test receipts back in Relay.
+## What remains to achieve the full idea
 
-The server owns mission context; the browser displays it. The laptop owns Bluetooth. The test workflow has its own storage directory and performs network calls outside the mission-store write lock. A single process owns each data directory. It does not alter existing mission reports or simulated emergency actions.
+- Observe a fresh physical-band report completing the new mission-driven action/receipt/follow-up chain. Configuring the read-only source is readiness, not that proof.
+- Integrate the browser executor with mission-driven selection and test the combined path before claiming it works.
+- Complete longer and simultaneous multi-responder listening, including a clearly recognized follow-up after restart.
+- Validate the chosen hosted deployment with the remote bridge. Real email, actual emergency services and general autonomous computer use remain outside these checkpoints.
 
-## What remains
+## Run and preserve the checkpoints
 
-- Connect mission-derived, source-linked proposals to the verified execution workflow with appropriate review. The current test request is entered manually.
-- Complete longer and simultaneous multi-responder physical acceptance, including a clearly recognized follow-up after restart.
-- Validate a chosen hosted deployment and remote bridge together. Deployment files are not proof of public operation.
-- Add real outside service/browser integrations only as separately verified connectors. Email, actual emergency dispatch and generic computer operation are not part of this checkpoint. Separate browser-execution experiments are not included here.
-- Complete presentation/submission work in its owning workstreams. This push does not merge the default branch, change repository visibility or publish a stable release.
+For mission-driven execution, install dependencies, build, configure Gemini privately, then run `npm run mission:demo`. Default isolated ports are 14417/14418. The launcher generates separate worker credentials/data, refuses occupied ports and does not start a microphone. Follow [MISSION_EXECUTION.md](MISSION_EXECUTION.md) for configuration, the read-only source and recovery.
 
-Vexo and Gemini remain the core product contributions. MiniMax and Deepgram are optional adapters. No Meta runtime integration is claimed. Optional Antigravity work remains separate in [PR #4](https://github.com/JakAcos/vexohacks/pull/4).
+For the fixed HTTP demo, use `npm run demo:test-dispatch`; see [TEST_DISPATCH.md](TEST_DISPATCH.md). For browser mode, use the separately published [PR #6](https://github.com/JakAcos/vexohacks/pull/6) and its browser setup instructions.
 
-## Run the verified milestone
+Mission execution is on `checkpoint/relay-mission-execution-2026-11-14`, based on frozen HTTP commit `dc506a8`. [PR #5](https://github.com/JakAcos/vexohacks/pull/5) and [PR #6](https://github.com/JakAcos/vexohacks/pull/6) remain separate recoverable checkpoints. Nothing here merges the default branch, publishes a stable release or changes repository visibility. GitHub’s existing workflow publishes handoff information; application checks were run independently and are not provided by that workflow.
 
-```sh
-npm ci
-npm run build
-npm run demo:test-dispatch
-```
-
-Open `http://127.0.0.1:14317/?incidentId=test-dispatch-demo#test-dispatch`. The launcher starts its own two local processes, uses synthetic data and generated worker credentials, and refuses occupied ports. It does not operate the band or call AI providers. Stop with Ctrl+C; restarting preserves receipts. Read [TEST_DISPATCH.md](TEST_DISPATCH.md) for ports, configuration, API contracts and recovery.
-
-For the original mission flow use [README](README.md), [Vexo setup](VEXO_LIVE_BRIDGE.md) and [cloud preparation](CLOUD_DEPLOYMENT.md).
-
-## GitHub checkpoint
-
-Branch: `checkpoint/relay-working-2026-11-14`; [draft PR #5](https://github.com/JakAcos/vexohacks/pull/5). The original checkpoint remains in history, followed by this verified milestone and updated catch-up. GitHub’s existing workflow publishes handoff information; it does not run application tests.
-
-Included: source, tests, dependency lockfile, setup documentation and a deliberately reviewed synthetic verification summary. Excluded: credentials, generated test data, real speech, mission records, screenshots, caches, dependencies, compiled bundles and ZIPs. Both Git and Docker ignore the generated test credential/data directories. The shared live demo was not modified by this publication.
+Included: reviewed source, tests, setup instructions and synthetic verification summaries. Excluded: credentials, real mission records, recordings, screenshots, generated data, dependencies and compiled bundles. The release work did not alter the shared band runtime or stage mission. Vexo and Gemini remain the core path; MiniMax and Deepgram are optional adapters, and no Meta runtime integration is claimed.
