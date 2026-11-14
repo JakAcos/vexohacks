@@ -1,0 +1,11 @@
+node_modules
+dist/
+data/
+.env
+.env.*
+!.env.example
+*.log
+vexo-open-kit/
+.playwright-cli/
+build-server/
+build-tests/
