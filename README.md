@@ -1,5 +1,9 @@
 # Relay — Mission Orchestrator
 
+**Current team build — November 14, 2026.** Start with the [teammate catch-up](TEAM_STATUS.md) for what works, setup, verification, and unfinished work. The verified shared-context, HTTP-handoff, and browser-execution checkpoint is now on `main` in both [the shared repository](https://github.com/JakAcos/vexohacks) and [Dante's repository](https://github.com/dantegarcia654/relay-vexohacks).
+
+[Watch the earlier software demo](demo/Relay-Software-Demo-V1.mp4) · [Demo scope](demo/README.md) · [Detailed checkpoint evidence](CHECKPOINT_HANDOFF.md)
+
 **R̳e̳l̳a̳y̳ i̳s̳ t̳h̳e̳ c̳e̳n̳t̳r̳a̳l̳ m̳i̳s̳s̳i̳o̳n̳ o̳r̳c̳h̳e̳s̳t̳r̳a̳t̳o̳r̳:̳ c̳o̳n̳t̳i̳n̳u̳o̳u̳s̳ c̳o̳n̳t̳e̳x̳t̳ f̳r̳o̳m̳ e̳v̳e̳r̳y̳ r̳e̳s̳p̳o̳n̳d̳e̳r̳’̳s̳ V̳e̳x̳o̳ b̳a̳n̳d̳ b̳e̳c̳o̳m̳e̳s̳ s̳h̳a̳r̳e̳d̳ u̳n̳d̳e̳r̳s̳t̳a̳n̳d̳i̳n̳g̳ a̳n̳d̳ c̳o̳o̳r̳d̳i̳n̳a̳t̳e̳d̳ a̳g̳e̳n̳t̳ a̳c̳t̳i̳o̳n̳s̳.̳**
 
 Start with the [three-hour catch-up and exact checkpoint status](CHECKPOINT_HANDOFF.md). It explains the goal, integrated capabilities, verification and remaining gaps.

@@ -1,0 +1,32 @@
+Historical draft from publication commit 720a9b2; see TEAM_STATUS.md for current capabilities.
+
+RELAY — SUBMISSION DRAFT
+Agent-prepared for team review. November 14, 2026.
+
+Tagline
+Wearable reports become shared context and reviewable actions.
+
+Short description
+Relay helps responders and dispatchers keep track of a changing incident. A responder speaks through a Vexo bracelet. Gemini transcribes the report, extracts useful information and proposes actions. The mission screen keeps the report, its source, the changing situation and action results together. Team updates appear automatically; a dispatcher reviews service requests before approving them. Emergency-service delivery is simulated in this prototype.
+
+What we built
+A Vexo audio bridge, a shared mission dashboard, background Gemini processing, source-linked action proposals, human approval and persistent simulated delivery receipts. Accepted reports and audio save before AI finishes, so a slow model does not block report intake. Stable event IDs support duplicate-free retries, and saved processing jobs can recover after a restart.
+
+What makes it useful
+A radio lets people talk. Relay helps the team keep track of those updates and turn them into reviewable actions. The intended benefit is less manual reconstruction of who reported what and what still needs a decision. We have not measured operational time savings.
+
+Technical approach
+Vexo band → nearby laptop bridge → Relay server → Gemini transcription, extraction and planning → shared mission screen → dispatcher review → simulated service acknowledgment. The dashboard receives live mission updates. The prototype uses one server process and disk-backed mission records. A private HTTPS deployment configuration is included; a working hosted deployment must be verified separately.
+
+Evidence boundaries
+The final local single-band demo passed independent acceptance at 1:52 PM Pacific: fresh physical band-38 audio reached Gemini, produced source-linked actions, and kept its simulated approval receipt through retry and reload. One earlier intended follow-up was not recognized; it was not counted as a pass. No actual emergency units, SMS or radio dispatch are connected. The app does not identify speakers automatically, guarantee complete capture, enforce separate dispatcher accounts, or establish operational readiness for emergency use.
+
+Next steps
+Complete the final-build rehearsal; validate longer capture and recovery under realistic conditions; test permissions and real integrations in an appropriate evaluation setting. Do not add sponsor integrations solely for credit.
+
+Submission gates from organizer slides
+Before 6 PM Pacific on November 14: final commits, public GitHub repository with README, video demo and Devpost submission. Be ready for a working in-person demonstration. The live submission destination is https://vexohacks.devpost.com/ and confirms those requirements. The team's 3 PM build target remains an internal readiness milestone.
+
+Organizer source
+https://docs.google.com/presentation/d/1WfolIHSbiYNbzTfdFW26vU3bxyHt2O9NPFA8HRCGcq0
+Slides 6, 8 and 29 in the retrieved presentation.

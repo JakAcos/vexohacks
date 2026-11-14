@@ -1,0 +1,79 @@
+{
+  "archiveSha256": "d52470109f25f53b51716c5f7cd897941f0f5b50bb7bea0673ffa49ece8de802",
+  "archiveBytes": 313226,
+  "manifestFiles": 89,
+  "zipIntegrity": true,
+  "completeManifest": true,
+  "safePaths": true,
+  "noCapturedMediaOrRuntimeDirectories": true,
+  "configuredSecretsAbsent": true,
+  "accessFixRegressionIncluded": true,
+  "cleanInstall": true,
+  "rebuildIdentity": true,
+  "rebuiltFiles": 17,
+  "missingBuildFiles": [],
+  "extraBuildFiles": [],
+  "mismatchedBuildFiles": [],
+  "cleanRuntime": {
+    "cleanStart": true,
+    "mode": "demo",
+    "noProviderCalls": true,
+    "syntheticInput": true,
+    "reportCount": 1,
+    "actionCount": 3,
+    "simulatedReceipts": true,
+    "retryNoDuplicate": true,
+    "restartPersistence": true,
+    "coexistingBandMetadata": true
+  },
+  "packagedNodeTests": {
+    "passed": 58,
+    "failed": 0
+  },
+  "pythonTests": {
+    "passed": 19,
+    "skipped": 1,
+    "sameTestAndBridgeFilesAsPriorCandidate": true,
+    "skipReason": "Optional SDK decoder unavailable in clean package"
+  },
+  "status": "PASS: package integrity, clean rebuild, synthetic startup/retry/approval/restart and legacy metadata coexistence",
+  "limits": [
+    "Hosted deployment, multiple bands and multi-hour capture are unverified",
+    "One earlier intended follow-up was not recognized; only fresh post-fix successful cue counted",
+    "Service delivery remains simulated",
+    "Public repository, video publication and Devpost submission require completion"
+  ],
+  "physicalAcceptance": {
+    "verdict": "PASS for the final local single-band simulated-service demo",
+    "checkedAt": "2026-11-14T21:52:07.537364+00:00",
+    "checks": {
+      "physicalBand38": true,
+      "finalReportComplete": true,
+      "fireActionSourceLinked": true,
+      "fireReceiptPersisted": true,
+      "teamUpdateAcknowledged": true,
+      "oneReceiptForFire": true,
+      "chronologyStillCorrect": true,
+      "latestClearanceEvidencePreserved": true,
+      "listeningRemainsOn": true,
+      "noBandBacklog": true
+    },
+    "allInspectedRuntimeFilesMatchAuditedPackage": true,
+    "limitations": [
+      "Services are simulated; no real units dispatched.",
+      "Local server with Gemini; hosted deployment and multi-band operation not certified here.",
+      "One earlier intended follow-up was not recognized; it was not counted as a pass. The fresh post-fix scripted report matched and passed.",
+      "Two-hour recording reliability and production emergency-response suitability not established.",
+      "The earlier blocked entrance report and new clearance report remain a visible conflict for human review."
+    ]
+  },
+  "fullyTestedCandidateSha256": "f270c93fa534eb2563d5f9d7ebb9eec830507dc4a7dca8e0ab1c18a8aaf2510b",
+  "finalChanges": [
+    "SPONSOR_ROLES.md"
+  ],
+  "allCodeTestsAndBuildsUnchanged": true,
+  "historicalScope": {
+    "commit": "720a9b2ab3cbb90492bba117e05e524233ac97f5",
+    "note": "Historical publication evidence; file hashes and acceptance claims refer to that snapshot, not current main. See TEAM_STATUS.md."
+  }
+}

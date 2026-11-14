@@ -6,15 +6,15 @@ November 14, 2026 checkpoint. Prepared by Codex; agent-authored, not human-revie
 
 ## Get the current code
 
-The same checkpoint is published on `checkpoint/team-sync-2026-11-14` in both repositories:
+The same current source is published on `main` in both repositories. The original verified snapshot remains on `checkpoint/team-sync-2026-11-14`:
 
-- [Shared team repository](https://github.com/JakAcos/vexohacks/tree/checkpoint/team-sync-2026-11-14)
-- [Dante's repository](https://github.com/dantegarcia654/relay-vexohacks/tree/checkpoint/team-sync-2026-11-14)
+- [Shared team repository](https://github.com/JakAcos/vexohacks/tree/main)
+- [Dante's repository](https://github.com/dantegarcia654/relay-vexohacks/tree/main)
 
 For an existing clone, commit or save local work first, then fetch and check out that branch. For a fresh copy:
 
 ```sh
-git clone --branch checkpoint/team-sync-2026-11-14 https://github.com/JakAcos/vexohacks.git relay
+git clone https://github.com/JakAcos/vexohacks.git relay
 cd relay
 npm ci
 npm test
@@ -51,4 +51,6 @@ This is a time-bounded checkpoint of the completed, verified work, not a claim t
 
 The earlier submission package remains at [Dante's publication commit `720a9b2`](https://github.com/dantegarcia654/relay-vexohacks/tree/720a9b2ab3cbb90492bba117e05e524233ac97f5), including its [labeled software demo](https://github.com/dantegarcia654/relay-vexohacks/blob/720a9b2ab3cbb90492bba117e05e524233ac97f5/demo/Relay-Software-Demo-V1.mp4) and submission notes. That video shows the earlier simulated workflow and labeled historical hardware evidence; it does not demonstrate the newer browser checkpoint.
 
-Both existing default branches and prior publication artifacts are preserved. Source, tests, dependency lockfile, setup guides and reviewed synthetic verification records are included here. Credentials, raw speech, mission stores, screenshots, caches, dependency folders and compiled bundles are excluded. The manifests in [docs/verification](docs/verification) identify the accepted source and limits. New commits on the shared repository also appear in its [team handoff issue](https://github.com/JakAcos/vexohacks/issues/2).
+The merge preserves both repositories' histories and prior demo materials. Application source, tests and dependencies remain identical to checkpoint `5481528`; `main` adds front-page navigation and the prior publication materials. The already-published demo video is intentionally retained. Previously packaged browser/server bundles were rebuilt from the current source to avoid serving stale code. Credentials, raw speech, mission stores, local execution screenshots, caches and dependency folders remain excluded.
+
+The root `PUBLICATION-MANIFEST.json`, `RELEASE-MANIFEST.json`, `SUBMISSION.md`, `submission-copy.txt` and `verification/` records describe the historical `720a9b2` publication; their earlier claims and hashes are not current-build acceptance. Current merge contents are recorded in [the main merge manifest](docs/verification/main-merge-2026-11-14.json). New commits on the shared repository also appear in its [team handoff issue](https://github.com/JakAcos/vexohacks/issues/2).

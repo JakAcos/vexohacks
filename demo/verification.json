@@ -1,0 +1,42 @@
+{
+  "filename": "Relay-Software-Demo-V1.mp4",
+  "sha256": "f6047e97400f9689e550c1c53473619c04e2c939d4b18b2dc02badffcc2d59f5",
+  "durationSeconds": 40.5,
+  "resolution": "1920x1080",
+  "videoCodec": "H.264",
+  "frameRate": 30,
+  "audioCodec": "AAC",
+  "audioSampleRate": 48000,
+  "fullDecodePassed": true,
+  "playbackReachedEnd": true,
+  "visualReview": "Beginning, report/action states and historical receipt inspected; human review pending",
+  "audio": "Local synthetic computer voice, signal/decode verified; no human listening acceptance claimed",
+  "sources": [
+    {
+      "rangeSeconds": [
+        0,
+        30
+      ],
+      "kind": "actual isolated browser capture",
+      "input": "typed fictional report",
+      "processing": "deterministic demo rules",
+      "serviceDelivery": "simulated",
+      "recordedCandidateSha256": "8be84243f3218185396f3521458155e8656e38b5f0431998cf8213770ef6d28f",
+      "interfaceByteIdenticalToCorrectedRelease": true
+    },
+    {
+      "rangeSeconds": [
+        30,
+        40.5
+      ],
+      "kind": "historical sanitized receipt screenshot",
+      "source": "Earlier band38 Gemini test; approval by Codex QA in simulation",
+      "liveCapture": false
+    }
+  ],
+  "publication": "not performed",
+  "historicalScope": {
+    "commit": "720a9b2ab3cbb90492bba117e05e524233ac97f5",
+    "note": "Historical publication evidence; file hashes and acceptance claims refer to that snapshot, not current main. See TEAM_STATUS.md."
+  }
+}
