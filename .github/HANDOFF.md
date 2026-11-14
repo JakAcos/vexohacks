@@ -14,7 +14,7 @@ The workflow lists commits and changed paths, links associated PR context, reads
 
 ## Permissions and coverage
 
-- Job token: `contents: read`, `issues: write`. No personal token or external webhook.
+- Job token: `contents: read`, `pull-requests: read`, `issues: write`. No personal token or external webhook.
 - Trigger: every branch push **on branches that contain the workflow**. No tag trigger.
 - Installed on `main` and `feat/incident-copilot`. New branches created from these inherit it; branches created from older commits must add the workflow.
 - No concurrency cancellation: separate rapid pushes get separate runs/comments. Comments may arrive out of order; use branch, SHA and run links.
