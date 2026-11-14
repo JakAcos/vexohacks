@@ -6,13 +6,15 @@ Start with the [three-hour catch-up and exact checkpoint status](CHECKPOINT_HAND
 
 Relay brings responder context into one shared mission, then coordinates source-linked actions from that context. Police, firefighters, EMS and the 911 dispatcher contribute to the same mission record. The dashboard shows what was reported, what changed, what the coordinator requested, and what the service returned.
 
-**Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Service execution uses local simulated connectors: no real emergency units, emails or external services are contacted. Implementation and this documentation are AI-assisted.
+**Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Emergency-service execution uses local simulated connectors. The optional test workflow below contacts a real local Test Desk; no emergency units or emails are contacted. Implementation and this documentation are AI-assisted.
 
 ## Verified dispatcher handoff
 
 The optional [test-dispatch milestone](TEST_DISPATCH.md) now makes real HTTP submissions to a separate local test destination. Dispatcher A creates a ticket; Dispatcher B reads its confirmed result, submits a linked follow-up, and reads back the receipt. Relay displays both receipts. These are fixed, manually triggered test workers; existing emergency dispatch remains simulated. See the [updated catch-up and acceptance evidence](CHECKPOINT_HANDOFF.md).
 
 After `npm ci` and `npm run build`, run `npm run demo:test-dispatch` for the isolated demo on port 14317. It uses synthetic requests, separate generated worker credentials and no model calls or physical band.
+
+The optional [browser executor](BROWSER_ACTIONS.md) now fills the controlled destination form and clicks Submit for Dispatcher A. Relay displays before/after screenshots and destination receipts; B still independently verifies the result over HTTP. This is a fixed local browser workflow requiring the host’s owned-session allocator and Playwright Core. Mission-driven AI routing and physical-band-to-browser execution are not included.
 
 ## Start
 

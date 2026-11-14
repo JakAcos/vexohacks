@@ -1,3 +1,4 @@
+import { testDeskForm } from "./test-desk-form.js";
 import express from "express";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, readdir } from "node:fs/promises";
@@ -21,12 +22,13 @@ export function createTestDesk(directory: string, tokens: { a: string; b: string
   app.use(express.json({ limit: "4kb" }));
   app.get("/healthz", (_req, res) => res.json({ ok: true, destination: "Relay Test Desk", test: true }));
   app.use((req, res, next) => {
-    const worker = req.method === "POST" && req.path === "/tickets" ? "a" : "b";
+    const worker = ((req.method === "POST" && req.path === "/tickets") || req.path === "/computer/tickets") ? "a" : "b";
     const supplied = (req.get("authorization") ?? "").replace(/^Bearer /, "");
     if (!timingSafeEqual(Buffer.from(hash(supplied)), Buffer.from(hash(tokens[worker])))) return void res.status(401).json({ error: "Worker credential required." });
     if (!["GET", "HEAD"].includes(req.method) && !req.is("application/json")) return void res.status(415).json({ error: "Send application/json." });
     res.set("Cache-Control", "no-store"); next();
   });
+  app.get("/computer/tickets", (_req, res) => res.type("html").send(testDeskForm));
   async function readEntry(file: string): Promise<Entry | undefined> {
     try { return JSON.parse(await readFile(join(directory, file), "utf8")); }
     catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return; throw error; }

@@ -155,3 +155,31 @@ test("disabled connector and unsafe destinations fail closed", async t => {
   await assert.rejects(dispatch.start("test", body()), /not configured/);
   for (const origin of ["https://example.com", "http://localhost:4318", "http://127.0.0.1:4318/elsewhere", "http://127.0.0.1:4318/?secret=1"]) assert.throws(() => testDispatchConfig({ RELAY_TEST_DESK_ORIGIN: origin, RELAY_TEST_DISPATCH_A_TOKEN: tokens.a, RELAY_TEST_DISPATCH_B_TOKEN: tokens.b }));
 });
+
+test("browser executor failure never falls back to HTTP or runs the dependent worker", async t => {
+  let destinationCalls = 0;
+  const f = await fixture(t, (_req, _res, next) => { destinationCalls++; next(); });
+  const worker = new TestDispatch(join(f.directory, "browser"), { ...f.config, ticketExecutor: async () => { throw new Error("Browser window ownership changed"); } });
+  t.after(() => worker.close());
+  await worker.start("browser-failure", body()); await worker.idle();
+  const snapshot = await worker.snapshot("browser-failure");
+  assert.equal(snapshot.executionMode, "browser_form");
+  assert.equal(snapshot.runs[0].status, "failed");
+  assert.equal(snapshot.runs[0].ticket, undefined);
+  assert.equal(snapshot.runs[0].followUp, undefined);
+  assert.equal(destinationCalls, 0);
+});
+
+test("browser destination form requires Dispatcher A credentials and does not expose credentials", async t => {
+  const f = await fixture(t);
+  assert.equal((await fetch(f.origin + "/computer/tickets")).status, 401);
+  assert.equal((await fetch(f.origin + "/computer/tickets", { headers: { Authorization: `Bearer ${tokens.b}` } })).status, 401);
+  const response = await fetch(f.origin + "/computer/tickets", { headers: { Authorization: `Bearer ${tokens.a}` } });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.ok(html.includes("Submit a test ticket"));
+  assert.equal(html.includes(tokens.a), false);
+  assert.equal(html.includes(tokens.b), false);
+  await assert.rejects(f.worker.evidenceFile("test", randomUUID(), "../../worker-credentials.json"), /not found/);
+  await assert.rejects(f.worker.evidenceFile("test", randomUUID(), "after.png"), /not available/);
+});

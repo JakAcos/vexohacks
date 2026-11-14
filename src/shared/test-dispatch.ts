@@ -13,6 +13,7 @@ export type DispatchRun = {
   id: string; missionId: string; title: string; createdAt: string; updatedAt: string;
   status: "submitting" | "following_up" | "complete" | "failed";
   destination: string; ticket?: TicketReceipt; followUp?: FollowUpReceipt; error?: string;
+  browserEvidence?: { method: "browser_form"; agentId: string; browserPid: number; windowId: number; capturedAt: string; beforeSha256: string; afterSha256: string; receiptId: string };
   events: { worker: "coordinator" | "dispatcher_a" | "dispatcher_b"; message: string; timestamp: string }[];
 };
-export type DispatchSnapshot = { enabled: boolean; destination?: string; runs: DispatchRun[] };
+export type DispatchSnapshot = { executionMode?: "browser_form" | "http"; enabled: boolean; destination?: string; runs: DispatchRun[] };
