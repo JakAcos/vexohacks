@@ -1,3 +1,6 @@
+import { MissionSource, type MissionSourceConfig } from "./mission-source.js";
+import { MissionExecutor } from "./mission-executor.js";
+import { createMissionTools, type MissionTools } from "./mission-tools.js";
 import { BandSession } from "./band-session.js";
 import { TestDispatch, mountTestDispatch, type TestDispatchConfig } from "./test-dispatch.js";
 import { accessBoundary, type AccessConfig } from "./access.js";
@@ -32,9 +35,12 @@ export function createApp({
   processing,
   access = {},
   testDispatch,
-}: { directory?: string; mode?: Mode; serveDist?: boolean; processing?: ProcessingAdapters; access?: AccessConfig; testDispatch?: TestDispatchConfig } = {}) {
+  missionTools,
+  missionSource,
+}: { directory?: string; mode?: Mode; serveDist?: boolean; processing?: ProcessingAdapters; access?: AccessConfig; testDispatch?: TestDispatchConfig; missionTools?: MissionTools; missionSource?: MissionSourceConfig } = {}) {
+  let executor: MissionExecutor | undefined;
   const app = express(),
-    store = new Store(directory, { ...processing, onChange: state => publish(state) }),
+    store = new Store(directory, { ...processing, testDestination:missionTools?.destination, onChange: state => {publish(state);executor?.wake(state);} }),
     clients = new Map<string, Set<Response>>();
   app.disable("x-powered-by");
   app.get("/healthz", (_req, res) => res.json({ ok: true }));
@@ -64,6 +70,7 @@ export function createApp({
   });
   app.use(express.json({ limit: "24kb" }));
   const bandSession = new BandSession(directory, mode);
+  app.use("/api/band/session",(req,_res,next)=>{if(missionSource && req.method!=="GET") return next(new HttpError(409,"This candidate follows another mission read-only. Use the original mission for band controls."));next();});
   app.get('/api/band/session', (_req,res)=>res.json(bandSession.snapshot()));
   app.post('/api/band/session/start', (req,res)=>{
     const {incidentId,speaker}=z.object({incidentId:incidentIdSchema,speaker:z.string().trim().min(1).max(80)}).strict().parse(req.body);
@@ -83,9 +90,13 @@ export function createApp({
     return state;
   };
   const dispatch = new TestDispatch(directory, testDispatch);
-  const ready = Promise.all([store.resume(), dispatch.resume()]);
+  if(missionTools) executor = new MissionExecutor(store, missionTools);
+  const source = missionSource ? new MissionSource(store,directory,missionSource) : undefined;
+  const ready = Promise.all([store.resume(), dispatch.resume()]).then(async()=>{await source?.start();});
+  app.get("/api/mission-source",(_req,res)=>res.json(source?.snapshot()??{enabled:false}));
   app.use(async (_req, _res, next) => { try { await ready; next(); } catch (error) { next(error); } });
   mountTestDispatch(app, dispatch);
+  app.post("/api/actions/:id/retry-test",async(req,res)=>{const body=z.object({incidentId:incidentIdSchema}).strict().parse(req.body);if(!executor)throw new HttpError(503,"Mission test execution is disabled.");res.status(202).json(await executor.retry(body.incidentId,z.string().uuid().parse(req.params.id)));});
   app.get("/api/health", (_req, res) =>
     res.json({
       ok: true,
@@ -98,13 +109,15 @@ export function createApp({
         tracker: "evidence-based state reducer",
         briefing: "source-based template",
         coordinator: mode === "gemini" ? "Gemini action planner" : "deterministic demo action planner",
-        executor: "local simulated service connectors with durable receipts",
+        executor: missionTools ? "Gemini mission planner → real test desk → Gemini receipt agent → confirmed follow-up" : "local simulated service connectors with durable receipts",
       },
       geminiConfigured: Boolean(
         process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL,
       ),
       voice: voiceStatus(),
       simulated: true,
+      missionTestExecution:Boolean(missionTools),
+      missionSource:source?.snapshot(),
     }),
   );
   app.get("/api/incidents/:id", async (req, res) =>
@@ -312,5 +325,5 @@ export function createApp({
       });
     },
   );
-  return { app, store, ready, bandSession, dispatch };
+  return { app, store, ready, bandSession, dispatch, executor, source };
 }

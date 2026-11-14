@@ -16,3 +16,5 @@ cloud.env
 cloud-evidence*.json
 .test-dispatch-demo/
 test-desk-data/
+
+.mission-execution-demo/

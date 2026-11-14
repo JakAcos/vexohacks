@@ -16,6 +16,7 @@ import { transcribeAudio, transcribeGemini } from "./voice.js";
 import { isBriefingCommand } from "../shared/voice.js";
 
 export interface ProcessingAdapters {
+  testDestination?: string;
   extract?: (text: string, speaker: string, mode: Mode) => Promise<Fact[]>;
   plan?: (state: Incident, observation: Observation, mode: Mode) => Promise<Proposal[]>;
   transcribe?: (audio: Buffer, contentType: string, provider: "gemini" | "deepgram", allowSilence?: boolean) => Promise<string>;
@@ -74,6 +75,7 @@ export class Store {
           audit(current, "coordinator", "Restored saved audio reports to their received order. Original reports and action receipts were preserved.");
         });
       }
+      this.adapters.onChange?.(state);
       for (const job of state.reportJobs ?? []) {
         if (job.status !== "complete" && job.status !== "failed") this.schedule(id, job.id);
       }
@@ -168,7 +170,7 @@ export class Store {
   }
   async acceptRecord(id: string, speaker: string, text: string, mode: Mode,
     inputKind: Observation["inputKind"] = "typed", clientEventId?: string, sourceDevice?: SourceDevice,
-    extract?: () => Promise<Fact[]>) {
+    extract?: () => Promise<Fact[]>, imported?: {origin: Observation["importedFrom"];facts:Fact[]}) {
     let jobId: string | undefined;
     const state = await this.mutate(id, state => {
       if (clientEventId && state.voiceCommands.some(c => c.clientEventId === clientEventId)) throw new HttpError(409, "Voice event identifier already used for a command.");
@@ -180,9 +182,10 @@ export class Store {
       }
       if (this.duplicate(state, clientEventId)) throw new HttpError(409, "Report identifier already used for audio.");
       const timestamp = new Date().toISOString();
-      const observation: Observation = { id: randomUUID(), clientEventId, sourceDevice, speaker, text, timestamp, mode, inputKind, processingMs: 0, facts: [], factsReady: false, processing: "queued" };
+      const observation: Observation = { id: randomUUID(), clientEventId, sourceDevice, speaker, text, timestamp, mode, inputKind, processingMs: 0, facts: imported?.facts ?? [], factsReady: Boolean(imported), importedFrom:imported?.origin, processing: "queued" };
       const job: ReportJob = { id: randomUUID(), clientEventId, speaker, mode, inputKind, sourceDevice, observationId: observation.id, status: "queued", submittedAt: timestamp, timings: {} };
       state.observations.push(observation); (state.reportJobs ??= []).push(job);
+      if(imported)this.rebuildIssues(state);
       state.version++; jobId = job.id;
     });
     const job = state.reportJobs?.find(j => j.id === jobId);
@@ -341,12 +344,12 @@ export class Store {
         observation = state.observations.find(o => o.id === job?.observationId);
         if (!job || !observation) return;
         const version = state.version, actions = JSON.stringify(state.actions), started = performance.now();
-        const proposals = await (this.adapters.plan ? this.adapters.plan(state, observation, job.mode) : job.mode === "gemini" ? modelPlan(state, observation) : Promise.resolve(demoPlan(observation)));
+        const proposals = await (this.adapters.plan ? this.adapters.plan(state, observation, job.mode) : job.mode === "gemini" ? modelPlan(state, observation, this.adapters.testDestination) : Promise.resolve(demoPlan(observation)));
         let stale = false;
         await this.updateJob(id, jobId, (current, j) => {
           j.timings.planningMs = (j.timings.planningMs ?? 0) + Math.round(performance.now() - started);
           if (current.version !== version || JSON.stringify(current.actions) !== actions) { stale = true; return; }
-          applyProposals(current, current.observations.find(o => o.id === j.observationId)!, j.mode, proposals);
+          applyProposals(current, current.observations.find(o => o.id === j.observationId)!, j.mode, proposals, this.adapters.testDestination);
           j.status = "complete"; j.completedAt = new Date().toISOString();
           j.timings.totalMs = Date.now() - Date.parse(j.submittedAt);
           current.observations.find(o => o.id === j.observationId)!.processingMs = j.timings.totalMs;
