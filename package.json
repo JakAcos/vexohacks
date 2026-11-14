@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "demo:test-dispatch": "node scripts/test-dispatch-demo.mjs",
     "dev": "tsc -p tsconfig.server.json && concurrently -k \"tsc -p tsconfig.server.json --watch\" \"node --watch build-server/server/index.js\" \"vite --host 127.0.0.1\"",
     "build": "tsc --noEmit && tsc -p tsconfig.server.json && vite build",
     "typecheck": "tsc --noEmit",

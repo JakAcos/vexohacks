@@ -15,3 +15,5 @@ __pycache__/
 cloud.env
 *.audio
 *.intake-tmp
+.test-dispatch-demo/
+test-desk-data/

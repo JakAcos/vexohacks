@@ -1,4 +1,5 @@
 import { BandSession } from "./band-session.js";
+import { TestDispatch, mountTestDispatch, type TestDispatchConfig } from "./test-dispatch.js";
 import { accessBoundary, type AccessConfig } from "./access.js";
 import express from "express";
 import { isBriefingCommand } from "../shared/voice.js";
@@ -30,7 +31,8 @@ export function createApp({
   serveDist = false,
   processing,
   access = {},
-}: { directory?: string; mode?: Mode; serveDist?: boolean; processing?: ProcessingAdapters; access?: AccessConfig } = {}) {
+  testDispatch,
+}: { directory?: string; mode?: Mode; serveDist?: boolean; processing?: ProcessingAdapters; access?: AccessConfig; testDispatch?: TestDispatchConfig } = {}) {
   const app = express(),
     store = new Store(directory, { ...processing, onChange: state => publish(state) }),
     clients = new Map<string, Set<Response>>();
@@ -80,8 +82,10 @@ export function createApp({
       client.write(`event: incident\ndata: ${JSON.stringify(state)}\n\n`);
     return state;
   };
-  const ready = store.resume();
+  const dispatch = new TestDispatch(directory, testDispatch);
+  const ready = Promise.all([store.resume(), dispatch.resume()]);
   app.use(async (_req, _res, next) => { try { await ready; next(); } catch (error) { next(error); } });
+  mountTestDispatch(app, dispatch);
   app.get("/api/health", (_req, res) =>
     res.json({
       ok: true,
@@ -308,5 +312,5 @@ export function createApp({
       });
     },
   );
-  return { app, store, ready, bandSession };
+  return { app, store, ready, bandSession, dispatch };
 }

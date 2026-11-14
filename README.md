@@ -8,6 +8,12 @@ Relay brings responder context into one shared mission, then coordinates source-
 
 **Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Service execution uses local simulated connectors: no real emergency units, emails or external services are contacted. Implementation and this documentation are AI-assisted.
 
+## Verified dispatcher handoff
+
+The optional [test-dispatch milestone](TEST_DISPATCH.md) now makes real HTTP submissions to a separate local test destination. Dispatcher A creates a ticket; Dispatcher B reads its confirmed result, submits a linked follow-up, and reads back the receipt. Relay displays both receipts. These are fixed, manually triggered test workers; existing emergency dispatch remains simulated. See the [updated catch-up and acceptance evidence](CHECKPOINT_HANDOFF.md).
+
+After `npm ci` and `npm run build`, run `npm run demo:test-dispatch` for the isolated demo on port 14317. It uses synthetic requests, separate generated worker credentials and no model calls or physical band.
+
 ## Start
 
 Requires Node.js 24 or newer and npm.

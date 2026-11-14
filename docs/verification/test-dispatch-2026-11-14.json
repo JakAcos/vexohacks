@@ -1,0 +1,125 @@
+{
+  "milestone": "Real local HTTP dispatcher handoff",
+  "datePacific": "2026-11-14",
+  "authorship": "Codex independent verification; no human review implied",
+  "baselineCommit": "e316eaa6e13424cb15268b890f8ee5e75e6c98a5",
+  "sourceFiles": [
+    {
+      "path": ".gitignore",
+      "sha256": "26fa1a70dd591b96950f16b739ca9d20b613938f3efe4b1b9f9c067b1fee77a6",
+      "baselineSha256": "5028985132179612f31503b9e361cbed5190530aa4fad44b9bec41e72b878075"
+    },
+    {
+      "path": "package.json",
+      "sha256": "920c43ddab78599bf9e07f34621950f1298c1715eb962061efc2ee4e953429c2",
+      "baselineSha256": "751c07f39da4741ec4feed5ed1ad51e5d1817165de142eb814be089c81d62353"
+    },
+    {
+      "path": "TEST_DISPATCH.md",
+      "sha256": "b18561901a876e9b39cf6f30b2c13af2275077a465d28d63cd434de53f91c13a",
+      "baselineSha256": null
+    },
+    {
+      "path": "scripts/test-dispatch-demo.mjs",
+      "sha256": "7f8885c884a812fe1367df665134dbe80ce9d981d4c577198f2fcee61c23f3e3",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/server/app.ts",
+      "sha256": "c6f2acfbbe1abf1db118475fe9aa1eddf67981a01cfc1e59c0f40849e76f717b",
+      "baselineSha256": "48eb68ede5c692143544f37e0f76a8e764ed2132fb3735cc30225aadc3d05892"
+    },
+    {
+      "path": "src/server/index.ts",
+      "sha256": "b384afff1a5e210d5733c12003a4ec50d2247389df9d893aa4fcc1722a6e3ac0",
+      "baselineSha256": "49b71012f0e594cf5332d0022464a76faf4b308857d1e9975f134154dac9a2c2"
+    },
+    {
+      "path": "src/server/test-dispatch.ts",
+      "sha256": "53ce725d76eac76e418f5df654b31c7adaad6df4fb4aa9eebfadc5b95aeb06de",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/server/test-dispatch-files.ts",
+      "sha256": "a17d68982da3663ebe3e81baaf65c97aae9be17ddce2dd56ef357fd621ad04cd",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/server/test-desk.ts",
+      "sha256": "020373a2d0ce9294edfb9b6ea29540b260b561910b7700936e03ae85a2d594ef",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/server/test-desk-main.ts",
+      "sha256": "9d44cd0b18f0cf351b13bb3347444fd93eaf4c405612104dd16267c10992e26d",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/shared/test-dispatch.ts",
+      "sha256": "badad110dd309844103a1accba8227e46422eba6d4822507021c3f573ef29f5c",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/client/main.tsx",
+      "sha256": "ed2da85c67ef8e98f507ec2e4f1f04023b936f90f4bd7dd5888001a3d8ef28c0",
+      "baselineSha256": "14ee2986008325248fdff49308a5238d0d9f5397cb32993773f910e9313b392f"
+    },
+    {
+      "path": "src/client/TestDispatch.tsx",
+      "sha256": "11ad598525de9fe437e31d1afad5e3ca258cb5a6507ee6200790e1f8b376cb0e",
+      "baselineSha256": null
+    },
+    {
+      "path": "src/client/test-dispatch.css",
+      "sha256": "ad504443d8e098bc95a1cae1071624435e18eb155f0a8938d929d2d21eeb71e7",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests/test-dispatch.test.ts",
+      "sha256": "43a1d6dd0f871805627a6cd00982373becf9d03c6dbaa1e24b20c63fae22ddb5",
+      "baselineSha256": null
+    }
+  ],
+  "checks": {
+    "productionBuild": true,
+    "nodeTestsPassed": 68,
+    "finalUiReceiptDisplay": true,
+    "destinationFileReceiptMatch": true,
+    "actualProcessRestartPreservesReceipts": true,
+    "destinationOutageHasNoFalseSuccess": true,
+    "outageRetrySameRun": true,
+    "finalUiLostAckAfterPolling": true,
+    "pollsBeforeLostAck": 7,
+    "recoveryRequestIdentityPreserved": true,
+    "staleErrorCleared": true,
+    "unauthenticatedDestinationStatus": 401,
+    "wrongWorkerDestinationStatus": 401,
+    "intentionalRuns": 4,
+    "destinationReceipts": 8,
+    "duplicateReceipts": 0
+  },
+  "finalUiBuild": {
+    "javascript": "index-CWb2ljxX.js",
+    "stylesheet": "index-DMJI4QNF.css"
+  },
+  "example": {
+    "runId": "c29d8a59-dabe-4daf-bce8-4e5b630e39a8",
+    "missionId": "checkpoint-execution",
+    "ticketReceipt": "143a63f8-b237-47b6-b0f9-617d2d545c28",
+    "followUpReceipt": "78fb4999-3bc1-40d5-9332-a920d51187a6",
+    "sourceReceiptId": "143a63f8-b237-47b6-b0f9-617d2d545c28",
+    "syntheticTitle": "Confirm supply pickup at the test staging desk"
+  },
+  "limits": [
+    "Fixed workflow, manually triggered from Relay",
+    "Separate local HTTP test destination; no public service submission",
+    "No model calls, microphone or physical band during this milestone verification",
+    "Existing emergency-service actions remain simulated",
+    "Application tests ran locally; GitHub workflow only publishes repository handoff"
+  ],
+  "pythonBaseline": {
+    "passed": 19,
+    "skipped": 1,
+    "reason": "Optional SDK decoder test requires VEXO_KIT_PATH; unchanged bridge code/tests from verified baseline"
+  }
+}

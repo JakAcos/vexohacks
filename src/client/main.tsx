@@ -6,6 +6,7 @@ import "./style.css";
 import { VoiceConsole } from "./VoiceConsole";
 import { BandListening } from "./BandListening";
 import { MissionActions } from "./MissionActions";
+import { TestDispatch } from "./TestDispatch";
 import { SponsorEvidence } from "./SponsorEvidence";
 import { sponsorEvidence } from "../shared/sponsorEvidence";
 import { latestIncident, ReportSubmissions } from "../shared/mission-sync";
@@ -270,6 +271,7 @@ function App() {
         <div className="workspace">
           <div className="primary">
             <div id="mission-actions"><MissionActions incident={state} busy={!!operation} connected={connected} act={act} /></div>
+            <TestDispatch missionId={incidentId} />
             <section className="panel timeline-panel">
               <div className="panel-heading">
                 <div>
