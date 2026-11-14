@@ -1,18 +1,26 @@
+import { BandSession } from "./band-session.js";
+import { accessBoundary, type AccessConfig } from "./access.js";
 import express from "express";
+import { isBriefingCommand } from "../shared/voice.js";
 import type { Response } from "express";
 import { z, ZodError } from "zod";
 import { resolve } from "node:path";
-import { Store, HttpError } from "./store.js";
+import { Store, HttpError, type ProcessingAdapters } from "./store.js";
 import { extractDemo, extractGemini } from "./agents.js";
 import {
   audioTypes,
   voiceStatus,
   transcribeAudio,
   synthesizeBriefing,
+  transcribeGemini,
+  synthesizeGemini,
 } from "./voice.js";
 import {
   incidentIdSchema,
   observationInput,
+  sourceDeviceSchema,
+  type SourceDevice,
+  type Observation,
   type Incident,
   type Mode,
 } from "../shared/model.js";
@@ -20,25 +28,19 @@ export function createApp({
   directory = "./data",
   mode = "demo",
   serveDist = false,
-}: { directory?: string; mode?: Mode; serveDist?: boolean } = {}) {
+  processing,
+  access = {},
+}: { directory?: string; mode?: Mode; serveDist?: boolean; processing?: ProcessingAdapters; access?: AccessConfig } = {}) {
   const app = express(),
-    store = new Store(directory),
+    store = new Store(directory, { ...processing, onChange: state => publish(state) }),
     clients = new Map<string, Set<Response>>();
   app.disable("x-powered-by");
-  // Local-only by default. Reject cross-origin writes; no permissive CORS or frontend secrets.
+  app.get("/healthz", (_req, res) => res.json({ ok: true }));
+  app.use(accessBoundary(access));
   app.use((req, res, next) => {
     if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-      const origin = req.get("origin");
       if (
-        origin &&
-        origin !== `http://${req.get("host")}` &&
-        !["http://127.0.0.1:5173", "http://localhost:5173"].includes(origin)
-      )
-        return res
-          .status(403)
-          .json({ error: "Cross-origin writes are disabled." });
-      if (
-        req.path === "/api/audio/observations"
+        ["/api/audio/observations", "/api/voice/audio"].includes(req.path)
           ? !audioTypes.has(
               (req.get("Content-Type") ?? "")
                 .split(";")[0]
@@ -51,7 +53,7 @@ export function createApp({
           .status(415)
           .json({
             error:
-              req.path === "/api/audio/observations"
+              ["/api/audio/observations", "/api/voice/audio"].includes(req.path)
                 ? "Send a supported audio Content-Type (WAV, MP3, MP4, WebM, Ogg or FLAC)."
                 : "Send application/json.",
           });
@@ -59,11 +61,27 @@ export function createApp({
     next();
   });
   app.use(express.json({ limit: "24kb" }));
+  const bandSession = new BandSession(directory, mode);
+  app.get('/api/band/session', (_req,res)=>res.json(bandSession.snapshot()));
+  app.post('/api/band/session/start', (req,res)=>{
+    const {incidentId,speaker}=z.object({incidentId:incidentIdSchema,speaker:z.string().trim().min(1).max(80)}).strict().parse(req.body);
+    res.status(202).json(bandSession.start(incidentId,speaker));
+  });
+  app.post('/api/band/session/retry', (req,res)=>{
+    z.object({}).strict().parse(req.body);
+    res.status(202).json(bandSession.retry());
+  });
+  app.post('/api/band/session/stop', (req,res)=>{
+    z.object({}).strict().parse(req.body);
+    res.status(202).json(bandSession.stop());
+  });
   const publish = (state: Incident) => {
     for (const client of clients.get(state.id) ?? [])
       client.write(`event: incident\ndata: ${JSON.stringify(state)}\n\n`);
     return state;
   };
+  const ready = store.resume();
+  app.use(async (_req, _res, next) => { try { await ready; next(); } catch (error) { next(error); } });
   app.get("/api/health", (_req, res) =>
     res.json({
       ok: true,
@@ -75,6 +93,8 @@ export function createApp({
             : "deterministic scenario parser",
         tracker: "evidence-based state reducer",
         briefing: "source-based template",
+        coordinator: mode === "gemini" ? "Gemini action planner" : "deterministic demo action planner",
+        executor: "local simulated service connectors with durable receipts",
       },
       geminiConfigured: Boolean(
         process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL,
@@ -109,29 +129,52 @@ export function createApp({
       res.write(`event: incident\ndata: ${JSON.stringify(state)}\n\n`);
     });
   });
+  const validateDevice = (device?: SourceDevice) => {
+    if (device && device.bandNumber !== Number(process.env.VEXO_BAND_NUMBER)) throw new HttpError(403, "Physical report must come from the configured team band.");
+  };
+  const voiceTurn = async (incidentId: string, speaker: string, text: string, clientEventId?: string, inputKind: Observation["inputKind"] = "transcript", sourceDevice?: SourceDevice) => {
+    validateDevice(sourceDevice);
+    if (isBriefingCommand(text)) {
+      return { kind: "briefing", transcript: text, incident: (await store.voiceBriefing(incidentId, speaker, text, clientEventId)) };
+    }
+    const incident = await store.acceptRecord(incidentId, speaker, text, mode, inputKind, clientEventId, sourceDevice);
+    return { kind: "observation", transcript: text, incident };
+  };
+  app.post("/api/voice/turn", async (req, res) => {
+    const { incidentId, speaker, text, clientEventId, inputKind, sourceDevice } = observationInput.parse({ ...req.body, inputKind: req.body.inputKind ?? "transcript" });
+    const turn = await voiceTurn(incidentId, speaker, text, clientEventId, inputKind, sourceDevice);
+    res.status(turn.kind === "briefing" ? 200 : 202).json(turn);
+  });
+  app.post("/api/voice/audio", express.raw({ type: () => true, limit: "8mb" }), async (req, res) => {
+    const { incidentId, speaker, provider, consent, clientEventId, inputKind, bandNumber, deviceTransport, capturedAt, captureMode } = z.object({ incidentId: incidentIdSchema,
+      captureMode: z.literal("continuous").optional(),
+      inputKind: z.literal("vexo-audio").optional(), bandNumber: z.coerce.number().int().min(1).max(999).optional(), deviceTransport: z.enum(["ble", "serial"]).optional(), capturedAt: z.string().datetime().optional(),
+      speaker: z.string().trim().min(1).max(80), clientEventId: z.string().uuid().optional(), provider: z.enum(["deepgram", "gemini"]).default("deepgram"), consent: z.enum(["send-to-deepgram", "send-to-gemini"]) }).strict().parse(req.query);
+    if (consent !== `send-to-${provider}`) throw new HttpError(400, "Consent must match the selected transcription provider.");
+    if (!inputKind && (bandNumber !== undefined || deviceTransport || capturedAt)) throw new HttpError(400, "Device metadata requires vexo-audio input kind.");
+    const sourceDevice = inputKind ? sourceDeviceSchema.parse({kind:"vexo",bandNumber,transport:deviceTransport,capturedAt}) : undefined;
+    validateDevice(sourceDevice);
+    if (captureMode && (provider !== "gemini" || !sourceDevice)) throw new HttpError(400, "Continuous audio requires a configured physical band and Gemini.");
+    if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, "No audio recorded. Try again or type the report.");
+    res.status(202).json(await store.acceptAudio(incidentId, speaker, req.body, (req.get("Content-Type") ?? "").split(";")[0].toLowerCase(), provider, mode, clientEventId, inputKind ?? "transcript", sourceDevice, captureMode));
+  });
   app.post("/api/observations", async (req, res) => {
-    const { incidentId, speaker, text, inputKind } = observationInput.parse(
+    const { incidentId, speaker, text, inputKind, clientEventId, sourceDevice } = observationInput.parse(
       req.body,
     );
-    const state = await store.record(
-      incidentId,
-      speaker,
-      text,
-      mode,
-      async () =>
-        mode === "gemini" ? extractGemini(text, speaker) : extractDemo(text),
-      inputKind,
-    );
-    res.status(201).json(publish(state));
+    validateDevice(sourceDevice);
+    const state = await store.acceptRecord(incidentId, speaker, text, mode, inputKind, clientEventId, sourceDevice);
+    res.status(202).json(state);
   });
   app.post(
     "/api/audio/observations",
     express.raw({ type: () => true, limit: "8mb" }),
     async (req, res) => {
-      const { incidentId, speaker } = z
+      const { incidentId, speaker, clientEventId } = z
         .object({
           incidentId: incidentIdSchema,
           speaker: z.string().trim().min(1).max(80),
+          clientEventId: z.string().uuid().optional(),
           consent: z.literal("send-to-deepgram"),
         })
         .strict()
@@ -141,25 +184,13 @@ export function createApp({
           400,
           "Choose a nonempty single-speaker audio file.",
         );
-      const text = await transcribeAudio(
-        req.body,
-        (req.get("Content-Type") ?? "").split(";")[0].toLowerCase(),
-      );
-      const state = await store.record(
-        incidentId,
-        speaker,
-        text,
-        mode,
-        async () =>
-          mode === "gemini" ? extractGemini(text, speaker) : extractDemo(text),
-        "transcript",
-      );
-      res.status(201).json(publish(state));
+      const result = await store.acceptAudio(incidentId, speaker, req.body, (req.get("Content-Type") ?? "").split(";")[0].toLowerCase(), "deepgram", mode, clientEventId);
+      res.status(202).json(result.incident);
     },
   );
   app.post("/api/briefings/audio", async (req, res) => {
-    const { incidentId, briefingId } = z
-      .object({ incidentId: incidentIdSchema, briefingId: z.string().uuid() })
+    const { incidentId, briefingId, provider } = z
+      .object({ incidentId: incidentIdSchema, briefingId: z.string().uuid(), provider: z.enum(["minimax", "gemini"]).default("minimax") })
       .strict()
       .parse(req.body);
     const state = await store.get(incidentId),
@@ -173,7 +204,7 @@ export function createApp({
         409,
         "Request and review a current briefing before generating audio.",
       );
-    const audio = await synthesizeBriefing(briefing.text);
+    const audio = await (provider === "gemini" ? synthesizeGemini : synthesizeBriefing)(briefing.text);
     const current = await store.get(incidentId);
     if (
       current.version !== state.version ||
@@ -185,20 +216,36 @@ export function createApp({
       );
     res
       .set({
-        "Content-Type": "audio/mpeg",
+        "Content-Type": provider === "gemini" ? "audio/wav" : "audio/mpeg",
         "Cache-Control": "no-store",
         "X-Briefing-Id": briefing.id,
       })
       .send(audio);
   });
   const idBody = z.object({ incidentId: incidentIdSchema }).strict();
+  app.post("/api/actions/:id/approve", async (req, res) => {
+    const body = z.object({ incidentId: incidentIdSchema, approvedBy: z.string().trim().min(1).max(80), expectedVersion: z.number().int().nonnegative() }).strict().parse(req.body);
+    res.json((await store.approveAction(body.incidentId, z.string().uuid().parse(req.params.id), body.approvedBy, body.expectedVersion)));
+  });
+  app.post("/api/actions/:id/dismiss", async (req, res) => {
+    const body = z.object({ incidentId: incidentIdSchema, expectedVersion: z.number().int().nonnegative() }).strict().parse(req.body);
+    res.json((await store.dismissAction(body.incidentId, z.string().uuid().parse(req.params.id), body.expectedVersion)));
+  });
+  app.post("/api/observations/:id/plan", async (req, res) => {
+    const body = idBody.parse(req.body);
+    res.status(202).json((await store.retryPlanning(body.incidentId, z.string().uuid().parse(req.params.id), mode)));
+  });
+  app.post("/api/reports/:id/retry", async (req, res) => {
+    const { incidentId } = idBody.parse(req.body);
+    res.status(202).json(await store.retryReport(incidentId, z.string().uuid().parse(req.params.id)));
+  });
   app.post("/api/briefings", async (req, res) => {
     const { incidentId } = idBody.parse(req.body);
-    res.json(publish(await store.briefing(incidentId)));
+    res.json((await store.briefing(incidentId)));
   });
   app.post("/api/handovers", async (req, res) => {
     const { incidentId } = idBody.parse(req.body);
-    res.status(201).json(publish(await store.briefing(incidentId, true)));
+    res.status(201).json((await store.briefing(incidentId, true)));
   });
   app.post("/api/handovers/:id/approve", async (req, res) => {
     const body = z
@@ -210,13 +257,13 @@ export function createApp({
       .strict()
       .parse(req.body);
     res.json(
-      publish(
+      (
         await store.approve(
           body.incidentId,
           req.params.id,
           body.approvedBy,
           body.expectedVersion,
-        ),
+        )
       ),
     );
   });
@@ -224,7 +271,7 @@ export function createApp({
     z.object({ confirm: z.literal("RESET SIMULATION") })
       .strict()
       .parse(req.body);
-    res.json(publish(await store.reset(incidentIdSchema.parse(req.params.id))));
+    res.json((await store.reset(incidentIdSchema.parse(req.params.id))));
   });
   if (serveDist) {
     app.use(express.static(resolve("dist")));
@@ -256,10 +303,10 @@ export function createApp({
       res.status(status).json({
         error:
           status === 500
-            ? "Processing failed. Observation was not committed; verify provider settings and retry."
+            ? "Request could not be confirmed. Retry with the same event identifier; already saved reports will not be duplicated."
             : (error as Error).message,
       });
     },
   );
-  return { app, store };
+  return { app, store, ready, bandSession };
 }

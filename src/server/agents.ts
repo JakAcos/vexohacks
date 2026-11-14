@@ -1,92 +1,54 @@
 import { extractionSchema, type Fact, type Incident } from "../shared/model.js";
 
-// This deliberately narrow parser supports the rehearsed scene, not arbitrary emergency reasoning.
+// Deliberately narrow scenario parser; unfamiliar reports stay available for review.
 export function isResidentResolution(text: string): boolean {
-  const statements = text
-    .toLowerCase()
-    .split(/[.!?]+/)
-    .map((s) => s.trim());
-  const residentStatements = statements.filter((s) => /\bresident\b/.test(s));
-  const foundOutside = residentStatements.some(
-    (s) =>
-      /\b(found|located)\b/.test(s) &&
-      /\b(person|occupant)\b/.test(s) &&
-      /\b(outside|outdoors)\b/.test(s) &&
-      !/\b(not|never|no|may|might|possibly|possible|could|unable|cannot|unconfirmed)\b|hasn't|can't/.test(
-        s,
-      ),
-  );
-  const noneMissing = residentStatements.some(
-    (s) =>
-      /\b(nobody|no one)( else)? (is )?(missing|unaccounted for)\b|\beveryone (is )?accounted for\b/.test(
-        s,
-      ) &&
-      !/\b(not|never|may|might|possibly|could|unconfirmed)\b|isn't/.test(s),
-  );
+  const statements = text.toLowerCase().replace(/[’‘]/g, "'").split(/[.!;\n]+/).map(s => s.trim());
+  const residentStatements = statements.filter(s => /\bresident\b/.test(s));
+  const doubtful = (s: string) => /\?|\b(not|never|may|might|maybe|possibly|possible|could|unable|cannot|unconfirmed|unclear|unknown|unsure|except)\b|\b(?:hasn't|haven't|can't|isn't|wasn't|didn't|doesn't|don't)\b/.test(s);
+  if (residentStatements.some(s => /\b(?:someone|somebody|person|occupant)\b.*\b(?:still upstairs|still missing|remains missing)\b/.test(s))) return false;
+  const foundOutside = residentStatements.some(s => !doubtful(s) && /\b(?:found|located)\s+(?:the\s+)?(?:missing\s+)?(?:person|occupant)\s+(?:safe(?:ly)?\s+)?(?:outside|outdoors)\b|\b(?:person|occupant)\s+(?:is|was|has been)\s+(?:found|located)\s+(?:outside|outdoors)\b/.test(s));
+  const noneMissing = residentStatements.some(s => !doubtful(s) && /\b(?:nobody|no one)(?: else)? (?:is )?(?:missing|unaccounted for)\b|\beveryone (?:is )?accounted for\b/.test(s));
   return foundOutside && noneMissing;
 }
 
 export function extractDemo(text: string): Fact[] {
-  const lower = text.toLowerCase();
+  const normalized = text.toLowerCase().replace(/[’‘]/g, "'")
+    .replace(/\bisn't\b/g, "is not").replace(/\bwasn't\b/g, "was not")
+    .replace(/\bhasn't\b/g, "has not").replace(/\bhaven't\b/g, "have not");
   const facts: Fact[] = [];
-  const resident = /resident/.test(lower);
-  const statement = (pattern: RegExp) =>
-    lower.split(/[.!?]+/).find((s) => pattern.test(s)) ?? lower;
-  const smokeSource = /resident/.test(statement(/smoke/))
-    ? "resident"
-    : "speaker";
-  const entranceSource = /resident/.test(statement(/rear entrance/))
-    ? "resident"
-    : "speaker";
-  if (/smoke/.test(lower))
-    facts.push({
-      topic: "smoke",
-      label: /second floor/.test(lower) ? "Second-floor smoke" : "Smoke",
-      status: /no smoke|smoke.*cleared|smoke.*gone/.test(lower)
-        ? "resolved"
-        : "reported",
-      source: smokeSource,
-      uncertain: /maybe|might|possible|may be/.test(lower),
-    });
-  if (/rear entrance/.test(lower))
-    facts.push({
-      topic: "rear-entrance",
-      label: "Rear entrance blocked",
-      status: /unblocked|not blocked|clear|no longer blocked/.test(lower)
-        ? "resolved"
-        : "reported",
-      source: entranceSource,
-      uncertain: /maybe|might|possibly/.test(lower),
-    });
+  const doubtful = (s: string) => /\?|\b(maybe|might|possible|possibly|may|could|unconfirmed|unclear|unknown|unsure)\b|not sure|(?:cannot|can't|unable to) (?:confirm|determine|rule out)|do not know|don't know/.test(s);
+  const negated = (s: string) => /\b(not|never|cannot|unable)\b|\b(?:can't|didn't|doesn't|don't)\b/.test(s);
   const residentResolution = isResidentResolution(text);
-  if (residentResolution)
-    facts.push({
-      topic: "occupant",
-      label: "Possible occupant upstairs",
-      status: "resolved",
-      source: "resident",
-      uncertain: true,
-    });
-  else if (
-    /(someone|person|occupant).*(upstairs|missing)|somebody.*upstairs/.test(
-      lower,
-    )
-  )
-    facts.push({
-      topic: "occupant",
-      label: "Possible occupant upstairs",
-      status: "reported",
-      source: resident ? "resident" : "speaker",
-      uncertain: true,
-    });
-  if (!facts.length)
-    facts.push({
-      topic: "other",
-      label: "Unclassified report — review required",
-      status: "reported",
-      source: resident ? "resident" : "speaker",
-      uncertain: true,
-    });
+  for (const sentence of normalized.split(/[.!;\n]+/).filter(Boolean)) {
+    let inheritedSource: Fact["source"] = "speaker";
+    // Clause boundaries prevent another subject's clearance or negation from leaking.
+    for (const raw of sentence.split(/\s*,\s*|\s+\b(?:and|but|however|yet)\b\s+/)) {
+      const clause = raw.trim();
+      if (!clause) continue;
+      if (/\bresident\b/.test(clause)) inheritedSource = "resident";
+      else if (/\b(?:i|we|firefighter|responder)\b/.test(clause)) inheritedSource = "speaker";
+      const source = inheritedSource, uncertain = doubtful(clause);
+      if (/\bsmoke\b/.test(clause) && !/\bsmoke (?:detector|alarm|machine|test)\b/.test(clause)) {
+        const clear = /\bno smoke\b|\bsmoke\s+(?:(?:is|was|has|have|been|now|fully|completely|reportedly)\s+)*(?:cleared|gone|dissipated)\b|\bsmoke\s+(?:(?:is|was)\s+)?no longer\s+(?:visible|present)\b/.test(clause);
+        facts.push({topic:"smoke",label:/\bsecond floor\b/.test(clause)?"Second-floor smoke":"Smoke",status:clear&&!uncertain&&!negated(clause)?"resolved":"reported",source,uncertain});
+      }
+      if (/\brear entrance\b/.test(clause)) {
+        const clear = /\brear entrance\s+(?:(?:is|was|has|been|now|currently|reported|confirmed|completely|fully)\s+)*(?:clear|unblocked|not blocked|no longer blocked)\b/.test(clause);
+        const otherNegation = negated(clause.replace(/\bnot blocked\b|\bno longer blocked\b/g,""));
+        facts.push({topic:"rear-entrance",label:"Rear entrance blocked",status:clear&&!uncertain&&!otherNegation?"resolved":"reported",source,uncertain});
+      }
+      if (/\b(?:someone|somebody|person|occupant)\b.*\b(?:upstairs|missing)\b/.test(clause) && !(residentResolution&&source==="resident")) {
+        facts.push({topic:"occupant",label:"Possible occupant upstairs",status:"reported",source,uncertain:true});
+      }
+    }
+  }
+  if(residentResolution)facts.push({topic:"occupant",label:"Possible occupant upstairs",status:"resolved",source:"resident",uncertain:true});
+  // Preserve opposing claims and attribution rather than choosing whichever came first.
+  for(const topic of ["smoke","rear-entrance"] as const){
+    const related=facts.filter(f=>f.topic===topic);
+    if(related.some(f=>f.status==="resolved")&&related.some(f=>f.status==="reported"))related.forEach(f=>{f.status="contradiction";f.uncertain=true;});
+  }
+  if(!facts.length)facts.push({topic:"other",label:"Unclassified report — review required",status:"reported",source:/\bresident\b/.test(normalized)?"resident":"speaker",uncertain:true});
   return facts;
 }
 
@@ -153,7 +115,7 @@ export async function extractGemini(
   );
   if (!response.ok)
     throw new Error(
-      `Gemini request failed (${response.status}); observation was not saved. Retry or restart in demo mode.`,
+      `Gemini request failed (${response.status}); report remains saved for retry. Retry or restart in demo mode.`,
     );
   const body = (await response.json()) as {
     status: string;
@@ -161,7 +123,7 @@ export async function extractGemini(
   };
   if (body.status !== "completed")
     throw new Error(
-      "Gemini did not complete extraction; observation was not saved.",
+      "Gemini did not complete extraction; report remains saved for retry.",
     );
   const output = body.steps
     ?.filter((step) => step.type === "model_output")
@@ -171,18 +133,22 @@ export async function extractGemini(
     .join("");
   if (!output)
     throw new Error(
-      "Gemini returned no structured extraction; observation was not saved.",
+      "Gemini returned no structured extraction; report remains saved for retry.",
     );
   const parsed = extractionSchema.parse(JSON.parse(output));
-  if (!parsed.facts.length)
-    throw new Error("Gemini returned no facts; observation was not saved.");
+  // A valid empty extraction is a result, not a provider outage. Preserve the
+  // transcript without inventing incident facts or repeatedly retranscribing it.
   return parsed.facts;
 }
 
 export function briefingText(state: Incident): string {
-  if (!state.observations.length)
+  if (!state.observations.length && !state.reportJobs?.length)
     return "No observations recorded. Incident status is unknown.";
-  return state.issues
+  const pending = state.observations.filter(o => o.factsReady === false);
+  const audioPending = (state.reportJobs ?? []).filter(j => j.audio && !j.observationId && !j.briefingId);
+  const prefix = [...pending.map(o => `Unprocessed report from ${o.speaker}: ${o.text}`), ...(audioPending.length ? [`${audioPending.length} saved audio report(s) await transcription.`] : [])].join(" ");
+  if (!prefix && !state.issues.length) return "Reports were recorded, but no incident facts were identified. Review the original reports; incident status remains unknown.";
+  return [prefix, state.issues
     .map((issue) => {
       const last = issue.evidence.at(-1)!;
       const source = last.source;
@@ -196,5 +162,5 @@ export function briefingText(state: Incident): string {
         return `Unclassified report from ${source} requires review: ${state.observations.find((o) => o.id === last.observationId)?.text}`;
       return `${issue.label} ${issue.status === "resolved" ? "reported cleared" : "reported"} by ${source}${issue.uncertain ? "; uncertain" : ""}.`;
     })
-    .join(" ");
+    .join(" ")].filter(Boolean).join(" ");
 }

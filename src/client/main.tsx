@@ -1,11 +1,20 @@
-import React, { useEffect, useState } from "react";
+import { ReportProgress } from "./ReportProgress";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { scenario, type Incident, type Issue } from "../shared/model";
 import "./style.css";
+import { VoiceConsole } from "./VoiceConsole";
+import { BandListening } from "./BandListening";
+import { MissionActions } from "./MissionActions";
+import { SponsorEvidence } from "./SponsorEvidence";
+import { sponsorEvidence } from "../shared/sponsorEvidence";
+import { latestIncident, ReportSubmissions } from "../shared/mission-sync";
+import "./mission-design.css";
 type Health = {
   mode: "demo" | "gemini";
   roles: Record<string, string>;
   voice: {
+    gemini: { configured: boolean };
     deepgram: { configured: boolean };
     minimax: { configured: boolean };
   };
@@ -25,6 +34,7 @@ async function request(path: string, body?: unknown) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(120000),
         }
       : undefined,
   );
@@ -42,7 +52,12 @@ function App() {
   const [state, setState] = useState<Incident>(),
     [health, setHealth] = useState<Health>(),
     [connected, setConnected] = useState(false),
-    [busy, setBusy] = useState(""),
+    [operation, setBusy] = useState(""),
+    [voiceActive, setVoiceActive] = useState(false),
+    [bandActive, setBandActive] = useState(false),
+    [presenting, setPresenting] = useState(false),
+    [missionDraft, setMissionDraft] = useState(incidentId),
+    [linkStatus, setLinkStatus] = useState(""),
     [error, setError] = useState(""),
     [speaker, setSpeaker] = useState("Firefighter A"),
     [text, setText] = useState(""),
@@ -51,8 +66,16 @@ function App() {
     [lead, setLead] = useState("Team lead"),
     [reset, setReset] = useState(false),
     [audioFile, setAudioFile] = useState<File>(),
-    [audioConsent, setAudioConsent] = useState(false),
-    [audioUrl, setAudioUrl] = useState<string>();
+    [audioConsent, setAudioConsent] = useState(false);
+  const submissions = useRef(new ReportSubmissions());
+  const audioSubmission = useRef<{ file: File; speaker: string; id: string } | undefined>(undefined);
+  const [reportNotice, setReportNotice] = useState("");
+  const acceptIncident = useCallback((incoming: Incident) => {
+    setState(current => latestIncident(current, incoming));
+  }, []);
+  const busy = operation;
+  const partnerEvidence = sponsorEvidence(state);
+  useEffect(() => { document.body.classList.toggle("presenting", presenting); const exit = (e: KeyboardEvent) => { if (e.key === "Escape") setPresenting(false); }; window.addEventListener("keydown", exit); return () => window.removeEventListener("keydown", exit); }, [presenting]);
   useEffect(() => {
     request("/health")
       .then(setHealth)
@@ -61,20 +84,13 @@ function App() {
     stream.onopen = () => setConnected(true);
     stream.onerror = () => setConnected(false);
     stream.addEventListener("incident", (e) =>
-      setState(JSON.parse((e as MessageEvent).data)),
+      acceptIncident(JSON.parse((e as MessageEvent).data)),
     );
     return () => stream.close();
   }, []);
   const draft = state?.handovers.at(-1),
     briefing = state?.briefings.at(-1);
   useEffect(() => setReviewed(false), [draft?.id, state?.version]);
-  useEffect(() => setAudioUrl(undefined), [briefing?.id, state?.version]);
-  useEffect(
-    () => () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    },
-    [audioUrl],
-  );
   async function uploadAudio() {
     if (!audioFile || !audioConsent) return;
     if (audioFile.size > 8 * 1024 * 1024) {
@@ -97,7 +113,11 @@ function App() {
       setError("Choose WAV, MP3, M4A, WebM, Ogg or FLAC audio.");
       return;
     }
-    setBusy("Sending selected file to Deepgram → recording transcript");
+    if (audioSubmission.current?.file !== audioFile || audioSubmission.current.speaker !== speaker) {
+      audioSubmission.current = {file: audioFile, speaker, id: crypto.randomUUID()};
+    }
+    const clientEventId = audioSubmission.current.id;
+    setBusy("Saving selected audio…");
     setError("");
     const start = performance.now();
     try {
@@ -105,39 +125,19 @@ function App() {
         incidentId,
         speaker,
         consent: "send-to-deepgram",
+        clientEventId,
       });
       const response = await fetch(`/api/audio/observations?${query}`, {
         method: "POST",
         headers: { "Content-Type": contentType },
         body: audioFile,
+        signal: AbortSignal.timeout(120000),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Audio upload failed.");
-      setState(result);
-      setLatency(Math.round(performance.now() - start));
-    } catch (error) {
-      setError((error as Error).message);
-    } finally {
-      setBusy("");
-    }
-  }
-  async function generateAudio() {
-    if (!briefing) return;
-    setBusy("Generating MiniMax briefing audio");
-    setError("");
-    setAudioUrl(undefined);
-    const start = performance.now();
-    try {
-      const response = await fetch("/api/briefings/audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ incidentId, briefingId: briefing.id }),
-      });
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error ?? "MiniMax audio failed.");
-      }
-      setAudioUrl(URL.createObjectURL(await response.blob()));
+      audioSubmission.current = undefined;
+      setReportNotice("Audio saved. Transcription and AI continue in the background.");
+      acceptIncident(result);
       setLatency(Math.round(performance.now() - start));
     } catch (error) {
       setError((error as Error).message);
@@ -151,7 +151,7 @@ function App() {
     const start = performance.now();
     try {
       const next = await request(path, body);
-      setState(next);
+      acceptIncident(next);
       setLatency(Math.round(performance.now() - start));
       return true;
     } catch (e) {
@@ -162,11 +162,12 @@ function App() {
     }
   }
   async function observe(speaker: string, text: string) {
-    return act("Recording → tracking incident", "/observations", {
-      incidentId,
-      speaker,
-      text,
-    });
+    const report = submissions.current.prepare(incidentId, speaker, text);
+    setReportNotice("Saving report…");
+    const saved = await act("Saving report and updating mission", "/observations", report);
+    if (saved) submissions.current.confirm(report);
+    setReportNotice(saved ? "Report saved. AI updates will appear automatically." : "Save not confirmed. Retry the same report; it will only be added once.");
+    return saved;
   }
   const active = state?.issues.filter((i) => i.status !== "resolved") ?? [],
     resolved = state?.issues.filter((i) => i.status === "resolved") ?? [];
@@ -182,80 +183,94 @@ function App() {
   return (
     <>
       <div className="simulation">
-        SIMULATED EMERGENCY · Human decisions only · No emergency services
+        SIMULATED EMERGENCY · Service requests need approval · No emergency services
         connected
       </div>
       <header>
-        <a className="brand" href="/" aria-label="First Responder Copilot home">
+        <a className="brand" href="/" aria-label="Relay home">
           <span className="brand-icon">✳</span>
           <span>
-            FIRST RESPONDER <b>COPILOT</b>
+            RELAY <b>MISSION ORCHESTRATOR</b>
           </span>
         </a>
         <span className={`connection ${connected ? "online" : ""}`}>
           <i />
           {connected ? "Live incident feed" : "Reconnecting…"}
         </span>
+        <button className="presentation-toggle secondary" onClick={() => setPresenting(v => !v)}>{presenting ? "Exit presentation" : "Presentation mode"}</button>
       </header>
       <main>
+        <form className="mission-switch" onSubmit={e => {
+          e.preventDefault();
+          const next = missionDraft.trim();
+          if (!/^[a-zA-Z0-9_-]{1,64}$/.test(next)) { setError("Use 1–64 letters, numbers, hyphens or underscores for the mission ID."); return; }
+          if (voiceActive || bandActive || operation || text.trim()) return;
+          const destination = new URL(window.location.href); destination.search = new URLSearchParams({incidentId: next}).toString(); destination.hash = "";
+          window.location.assign(destination);
+        }}>
+          <label htmlFor="mission-id">Mission ID</label>
+          <input id="mission-id" value={missionDraft} onChange={e => {setMissionDraft(e.target.value);setLinkStatus("");}} pattern="[a-zA-Z0-9_\-]{1,64}" maxLength={64} required disabled={voiceActive || bandActive || !!operation} aria-describedby="mission-link-status" />
+          <button className="secondary" type="submit" disabled={voiceActive || bandActive || !!operation || !!text.trim() || !missionDraft.trim()}>Open mission ↗</button>
+          <button className="text-button" type="button" disabled={voiceActive || !!operation} onClick={async () => {
+            const url = new URL(window.location.href);url.search = new URLSearchParams({incidentId}).toString();url.hash = "";
+            try { await navigator.clipboard.writeText(url.toString());setLinkStatus("Current mission link copied."); }
+            catch { setLinkStatus("Copy unavailable here. The current mission URL is in the address bar."); }
+          }}>Copy mission link</button>
+          <span id="mission-link-status" role="status">{linkStatus || (bandActive ? "Stop band listening and finish pending reports before changing missions." : voiceActive ? "Stop capture before changing missions." : text.trim() ? "Send or clear the typed report before switching." : "Use the same ID to share context on this server.")}</span>
+        </form>
         <section className="intro">
           <div>
             <p className="eyebrow">
               TEAM LEAD WORKSPACE / {incidentId.toUpperCase()}
             </p>
-            <h1>Keep the whole picture.</h1>
+            <h1>Every report. One shared mission.</h1>
             <p className="muted">
-              Apartment building <span> / </span> Smoke assessment
+              Vexo captures the report. Relay connects the context, updates the team, and prepares the next action.
             </p>
           </div>
           <div className="mode">
-            <span className="eyebrow">PROCESSING MODE</span>
+            <span className="eyebrow">MISSION REASONING</span>
             <strong>
               {health?.mode === "gemini"
-                ? "Gemini extraction"
+                ? "Gemini extraction + coordination"
                 : "Deterministic demo"}
             </strong>
             <small>
               {health?.mode === "gemini"
-                ? "Live API · rule-based tracker & briefing"
+                ? "Live Gemini · evidence-linked actions"
                 : "Scenario rules · no AI API calls"}
             </small>
           </div>
         </section>
-        <section className="metrics">
-          <div>
-            <span>OBSERVATIONS</span>
-            <strong>{state?.observations.length ?? 0}</strong>
-          </div>
-          <div>
-            <span>ACTIVE HAZARDS</span>
-            <strong>{hazards.length}</strong>
-          </div>
-          <div>
-            <span>OPEN QUESTIONS / CONFLICTS</span>
-            <strong>{questions.length}</strong>
-          </div>
-          <div>
-            <span>LAST REQUEST ROUND TRIP</span>
-            <strong>{latency === undefined ? "—" : `${latency} ms`}</strong>
-            <small>Measured in this browser</small>
-          </div>
-        </section>
+        <nav className="mission-flow" aria-label="How this mission works">
+          <a href="#band-input"><b>01</b><strong>Listen</strong><span>Vexo band → this mission</span></a>
+          <a href="#shared-picture"><b>02</b><strong>Build the shared picture</strong><span>{state?.observations.length ?? 0} reports · {hazards.length} active hazards · {questions.length} open questions</span></a>
+          <a href="#mission-actions"><b>03</b><strong>Coordinate the response</strong><span>{state?.actions?.filter(a => a.status === "proposed").length ?? 0} requests to review · {state?.actions?.filter(a => a.status === "acknowledged").length ?? 0} acknowledged</span></a>
+        </nav>
         <div className="status" role="status">
           {busy ||
             (!connected
               ? "Waiting for backend connection…"
-              : "Ready for an observation")}
-          <span>Recorder → situation tracker → requested briefing</span>
+              : voiceActive ? "Mission listening is active · dispatcher controls remain available" : "Ready for an observation")}
+          <span>Shared context → coordinator → actions → acknowledgments</span>
         </div>
         {error && (
           <div role="alert" className="error">
             {error}
           </div>
         )}
+        <BandListening incidentId={incidentId} speaker={speaker} onSpeaker={setSpeaker} onActive={setBandActive} externalBusy={voiceActive || !!operation} />
+        <details className="input-alternative" open={voiceActive || undefined} onToggle={e => { if (voiceActive) e.currentTarget.open = true; }}>
+          <summary>Laptop microphone & spoken briefing{voiceActive ? " · session active" : ""}</summary>
+        <VoiceConsole incidentId={incidentId} incident={state} speaker={speaker} onSpeaker={setSpeaker}
+          gemini={!!health?.voice.gemini.configured} deepgram={!!health?.voice.deepgram.configured} minimax={!!health?.voice.minimax.configured}
+          mode={health?.mode} externalBusy={!!operation || bandActive} onIncident={acceptIncident} onActive={setVoiceActive} />
+        </details>
+        <ReportProgress incident={state} act={act} />
         <div className="workspace">
           <div className="primary">
-            <section className="panel">
+            <div id="mission-actions"><MissionActions incident={state} busy={!!operation} connected={connected} act={act} /></div>
+            <section className="panel timeline-panel">
               <div className="panel-heading">
                 <div>
                   <p className="eyebrow">01 / INCIDENT RECORDER</p>
@@ -268,14 +283,13 @@ function App() {
                   <span>◎</span>
                   <h3>Waiting for the first report</h3>
                   <p>
-                    Send a responder observation or start the staged scenario
-                    below.
+                    Start band listening, type a report below, or open the sample reports at the bottom.
                   </p>
                 </div>
               ) : (
                 <ol className="timeline">
                   {state.observations.map((o, n) => (
-                    <li key={o.id}>
+                    <li key={o.id} id={`observation-${o.id}`}>
                       <span className="timeline-number">
                         {String(n + 1).padStart(2, "0")}
                       </span>
@@ -295,8 +309,8 @@ function App() {
                             </span>
                           ))}
                           <small>
-                            {o.inputKind} · {o.mode} · extraction{" "}
-                            {o.processingMs} ms
+                            {o.inputKind} · {o.mode} · {" "}
+                            {o.processing && o.processing !== "complete" ? `Saved · ${o.processing}` : `${o.processingMs} ms ${o.processing ? "total" : "extraction"}`}
                           </small>
                         </div>
                       </div>
@@ -306,7 +320,7 @@ function App() {
               )}
             </section>
             <section className="panel input-panel">
-              <p className="eyebrow">RESPONDER INPUT / TEXT BRIDGE</p>
+              <p className="eyebrow">RESPONDER INPUT / TYPED BACKUP</p>
               <h2>Add an observation</h2>
               <form
                 onSubmit={async (e) => {
@@ -317,16 +331,19 @@ function App() {
                 <label>
                   Speaker
                   <select
+                    disabled={!!busy}
                     value={speaker}
                     onChange={(e) => setSpeaker(e.target.value)}
                   >
                     <option>Firefighter A</option>
                     <option>Firefighter B</option>
+                    <option>911 Dispatcher</option><option>Police Officer</option><option>EMS Paramedic</option><option>Team lead</option>
                   </select>
                 </label>
                 <label>
                   Report
                   <textarea
+                    disabled={!!busy}
                     placeholder="What do you observe? Include who reported it."
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -335,14 +352,14 @@ function App() {
                   />
                 </label>
                 <button disabled={!!busy || !text.trim()} type="submit">
-                  Record observation <span>↗</span>
+                  Save report <span>↗</span>
                 </button>
               </form>
+              {reportNotice && <p className="small muted" role="status">{reportNotice}</p>}
               <p className="small muted">
-                Typed text now. Vexo transcripts can use the same backend
-                endpoint.
+                Typed reports and microphone transcripts update this same incident record.
               </p>
-              <div className="voice-upload">
+              <details className="voice-upload"><summary>Upload a prerecorded report</summary>
                 <h3>Audio file → Deepgram</h3>
                 <p className="small muted">
                   {!health
@@ -389,83 +406,12 @@ function App() {
                   resulting transcript. Empty or low-confidence results are
                   rejected.
                 </p>
-              </div>
-            </section>
-            <section className="panel scenario">
-              <div className="panel-heading">
-                <div>
-                  <p className="eyebrow">REHEARSAL CONTROLS</p>
-                  <h2>The two-minute scenario</h2>
-                </div>
-                <button
-                  className="text-button"
-                  disabled={!!busy}
-                  onClick={() => setReset(true)}
-                >
-                  Reset simulation
-                </button>
-              </div>
-              <p className="small muted">
-                Start with an empty incident. Each button submits a real backend
-                request.
-              </p>
-              <div className="scenario-steps">
-                {scenario.map((s, i) => (
-                  <button
-                    key={i}
-                    className="scenario-button"
-                    disabled={!!busy}
-                    onClick={() => observe(s.speaker, s.text)}
-                  >
-                    <span>0{i + 1}</span>
-                    <div>
-                      <strong>
-                        {
-                          [
-                            "Smoke + possible occupant",
-                            "Rear entrance blocked",
-                            "Resident locates missing person",
-                          ][i]
-                        }
-                      </strong>
-                      <small>{s.speaker}</small>
-                    </div>
-                    <b>+</b>
-                  </button>
-                ))}
-              </div>
-              {reset && (
-                <div className="reset-confirm">
-                  <p>
-                    Erase this simulated incident’s timeline, briefings and
-                    handovers?
-                  </p>
-                  <button
-                    className="danger"
-                    disabled={!!busy}
-                    onClick={async () => {
-                      if (
-                        await act(
-                          "Resetting simulation",
-                          `/incidents/${incidentId}/reset`,
-                          { confirm: "RESET SIMULATION" },
-                        )
-                      )
-                        setReset(false);
-                    }}
-                  >
-                    Erase simulation
-                  </button>
-                  <button className="secondary" onClick={() => setReset(false)}>
-                    Cancel
-                  </button>
-                </div>
-              )}
+              </details>
             </section>
           </div>
           <aside>
-            <section className="panel">
-              <p className="eyebrow">02 / SITUATION TRACKER</p>
+            <section id="shared-picture" className="panel situation-panel">
+              <p className="eyebrow">SHARED MISSION CONTEXT</p>
               <h2>Current picture</h2>
               <h3 className="subheading">Active hazards</h3>
               {hazards.length ? (
@@ -522,67 +468,12 @@ function App() {
                   ? "Update my briefing"
                   : "Give me the latest briefing"}
               </button>
-              {briefing && (
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    if (!("speechSynthesis" in window)) {
-                      setError("Browser speech playback is unavailable.");
-                      return;
-                    }
-                    window.speechSynthesis.cancel();
-                    const speech = new SpeechSynthesisUtterance(briefing.text);
-                    speech.onerror = () =>
-                      setError(
-                        "Browser speech playback failed. Written briefing remains available.",
-                      );
-                    window.speechSynthesis.speak(speech);
-                  }}
-                >
-                  ▷ Read aloud on this computer
-                </button>
-              )}
-              <p className="small muted">
-                Browser speech only · not MiniMax or band playback
-              </p>
-              <div className="voice-output">
-                <h3>MiniMax briefing audio</h3>
-                <p className="small muted">
-                  {!health
-                    ? "Checking provider configuration…"
-                    : health.voice.minimax.configured
-                      ? "Backend configured · availability checked on request"
-                      : "Not configured · set backend MiniMax key, model and voice"}
-                </p>
-                <button
-                  className="secondary"
-                  disabled={
-                    !!busy ||
-                    !health?.voice.minimax.configured ||
-                    !briefing ||
-                    briefing.stateVersion !== state?.version
-                  }
-                  onClick={generateAudio}
-                >
-                  Generate MiniMax audio
-                </button>
-                <p className="small muted">
-                  Generation sends the current briefing text to MiniMax. Play
-                  the returned audio on this computer; no band speaker is used.
-                </p>
-                {audioUrl && (
-                  <audio
-                    aria-label="MiniMax briefing playback"
-                    controls
-                    src={audioUrl}
-                    onError={() =>
-                      setError(
-                        "Returned MiniMax audio could not be played. The written briefing remains available.",
-                      )
-                    }
-                  />
-                )}
-              </div>
+              {briefing && <button className="text-button" disabled={briefing.stateVersion !== state?.version} onClick={() => {
+                const content = ["RELAY / INCIDENT BRIEFING", "Prepared by Relay software from attributed reports.", briefing.text,
+                  "SOURCE REPORTS", ...state!.observations.map(o => `[${time(o.timestamp)}] ${o.speaker}: ${o.text}`)].join("\n\n");
+                const url = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+                const link = document.createElement("a"); link.href = url; link.download = `relay-${incidentId}-briefing.txt`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}>Download current briefing</button>}
             </section>
             <section className="panel">
               <p className="eyebrow">HUMAN REVIEW</p>
@@ -665,8 +556,77 @@ function App() {
             </section>
           </aside>
         </div>
+            <details className="panel scenario">
+              <summary>Try sample reports</summary>
+              <div className="panel-heading">
+                <div>
+                  <p className="eyebrow">REHEARSAL CONTROLS</p>
+                  <h2>One incident. Four roles.</h2>
+                </div>
+                <button
+                  className="text-button"
+                  disabled={!!busy || voiceActive}
+                  onClick={() => setReset(true)}
+                >
+                  Reset simulation
+                </button>
+              </div>
+              <p className="small muted">
+                Each report updates this mission and its action queue. Service requests require dispatcher approval.
+              </p>
+              <div className="scenario-steps">
+                {[...scenario.map((report, i) => ({...report, title: ["Smoke + possible occupant", "Rear entrance blocked", "Resident locates missing person"][i]})),
+                  {speaker: "911 Dispatcher", title: "Request EMS support", text: "Request an ambulance for two injured people."},
+                  {speaker: "Police Officer", title: "Request traffic support", text: "Request police for traffic control. The road is blocked."},
+                  {speaker: "EMS Paramedic", title: "EMS provides a field update", text: "EMS on scene. Two people report injuries. We are checking their condition."}
+                ].map((s, i) => (
+                  <button key={i} className="scenario-button" disabled={!!busy || !connected}
+                    onClick={() => observe(s.speaker, s.text)}>
+                    <span>0{i + 1}</span><div><strong>{s.title}</strong><small>{s.speaker}</small></div><b>+</b>
+                  </button>
+                ))}
+              </div>
+              {reset && (
+                <div className="reset-confirm">
+                  <p>
+                    Erase this simulated incident’s timeline, briefings and
+                    handovers?
+                  </p>
+                  <button
+                    className="danger"
+                    disabled={!!busy || voiceActive}
+                    onClick={async () => {
+                      if (
+                        await act(
+                          "Resetting simulation",
+                          `/incidents/${incidentId}/reset`,
+                          { confirm: "RESET SIMULATION" },
+                        )
+                      )
+                        setReset(false);
+                    }}
+                  >
+                    Erase simulation
+                  </button>
+                  <button className="secondary" onClick={() => setReset(false)}>
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </details>
+        <details className="panel tools-panel">
+          <summary>Connected tools and evidence</summary>
+        <div className="integration-strip" aria-label="Integration status">
+          <a href="#sponsor-heading"><strong>Google Gemini</strong><small>{partnerEvidence.geminiCount ? `${partnerEvidence.geminiCount} saved extractions · inspect results ↗` : health?.mode === "gemini" ? "Live extraction enabled · awaiting report" : "Scenario rules · no extraction yet"}</small></a>
+          <a href="#sponsor-heading"><strong>Vexo</strong><small>{partnerEvidence.vexoPhysical ? `Band ${partnerEvidence.vexoPhysical.sourceDevice!.bandNumber} · ${partnerEvidence.vexoPhysicalCount} recorded reports ↗` : partnerEvidence.vexoCount ? `${partnerEvidence.vexoCount} simulator reports · inspect source ↗` : "No physical-band reports in this mission"}</small></a>
+          <span><strong>Speech loop</strong><small>{health?.voice.gemini.configured ? "Gemini audio configured" : "Browser speech available where supported"}</small></span>
+          <span><strong>Service execution</strong><small>Simulated connectors · dispatcher approval</small></span>
+        </div>
+
+          <SponsorEvidence incident={state} mode={health?.mode} connected={connected} />
+        </details>
         <footer>
-          FIRST RESPONDER COPILOT{" "}
+          RELAY / MISSION CONTROL{" "}
           <span>
             Vexo hackathon prototype · Sources stay attached. Humans stay in
             charge.
@@ -709,7 +669,7 @@ function IssueCard({ issue }: { issue: Issue }) {
           <p key={i} className="evidence">
             {e.source} · {e.status}
             <br />
-            {e.label} · {time(e.timestamp)}
+            {e.label} · {time(e.timestamp)} <a href={`#observation-${e.observationId}`}>View source ↗</a>
           </p>
         ))}
       </details>

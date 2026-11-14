@@ -9,7 +9,7 @@ import { createApp } from "../src/server/app.js";
 import { runTapBridge } from "../scripts/vexo-tap.mjs";
 test("SDK-compatible tap adapter posts scripted sources and requests the corrected briefing", async () => {
   const directory = await mkdtemp(join(tmpdir(), "copilot-bridge-"));
-  const { app } = createApp({ directory });
+  const { app, store } = createApp({ directory });
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   // This is an event-interface contract double, not a Vexo band or kit simulation.
@@ -18,12 +18,16 @@ test("SDK-compatible tap adapter posts scripted sources and requests the correct
       assert.deepEqual(options, { events: true }),
   });
   try {
-    const state = await runTapBridge(source, {
+    const accepted = await runTapBridge(source, {
       base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
       incidentId: "adapter-test",
       trigger: () => source.emit("tap"),
       delayMs: 0,
     });
+    assert.equal(accepted.observations.length, 3);
+    assert.equal(accepted.briefings.length, 1);
+    await store.idle();
+    const state = await store.briefing("adapter-test");
     assert.equal(state.observations.length, 3);
     assert.equal(state.observations[0].inputKind, "vexo-simulated-text");
     assert.match(
@@ -37,6 +41,7 @@ test("SDK-compatible tap adapter posts scripted sources and requests the correct
     );
     assert.equal(source.listenerCount("tap"), 0);
   } finally {
+    await store.close();
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await rm(directory, { recursive: true, force: true });

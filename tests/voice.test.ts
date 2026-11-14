@@ -1,3 +1,4 @@
+import { settle } from "./settle.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -32,7 +33,7 @@ async function workspace(
   for (const name of names) delete process.env[name];
   const originalFetch = globalThis.fetch;
   const directory = await mkdtemp(join(tmpdir(), "copilot-voice-"));
-  const { app } = createApp({ directory });
+  const { app, store } = createApp({ directory });
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
@@ -41,7 +42,7 @@ async function workspace(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    });
+    }).then(response => settle(response, store));
   // Synthetic bytes test the transport contract only, not recognition of real audio.
   const upload = (
     query = "incidentId=voice-test&speaker=Firefighter+A&consent=send-to-deepgram",
@@ -52,7 +53,7 @@ async function workspace(
       method: "POST",
       headers: { "Content-Type": contentType },
       body: bytes,
-    });
+    }).then(response => settle(response, store));
   try {
     await run({ base, post, upload, originalFetch });
   } finally {
@@ -61,6 +62,7 @@ async function workspace(
       if (saved[name] === undefined) delete process.env[name];
       else process.env[name] = saved[name];
     }
+    await store.close();
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await rm(directory, { recursive: true, force: true });
@@ -75,7 +77,7 @@ const transcript = (text: string, confidence = 0.99) =>
     }),
   );
 
-test("voice endpoints require consent, media type, payload limits and backend credentials without committing state", async () =>
+test("voice endpoints validate uploads and durably retain audio when provider credentials are missing", async () =>
   workspace(async ({ base, upload, post }) => {
     assert.equal(
       (await (await fetch(base + "/health")).json()).voice.deepgram.configured,
@@ -93,8 +95,10 @@ test("voice endpoints require consent, media type, payload limits and backend cr
       413,
     );
     const missing = await upload();
-    assert.equal(missing.status, 503);
-    assert.match((await missing.json()).error, /DEEPGRAM_API_KEY/);
+    assert.equal(missing.status, 202);
+    const saved = await missing.json();
+    assert.equal(saved.reportJobs[0].status, "failed");
+    assert.match(saved.reportJobs[0].error, /DEEPGRAM_API_KEY/);
     const state = await (await fetch(base + "/incidents/voice-test")).json();
     assert.equal(state.observations.length, 0);
     const brief = await (
@@ -130,7 +134,7 @@ test("Deepgram raw upload commits attributed transcript through the normal recor
       return originalFetch(input, options);
     };
     const response = await upload();
-    assert.equal(response.status, 201);
+    assert.equal(response.status, 202);
     const state = await response.json();
     assert.equal(state.observations[0].inputKind, "transcript");
     assert.equal(state.observations[0].speaker, "Firefighter A");
@@ -161,15 +165,17 @@ test("Deepgram empty, uncertain, malformed and failed responses never create an 
         throw new Error("network credentials must never echo");
       },
     ];
-    const expected = [422, 422, 502, 502, 502];
+
     for (let n = 0; n < responses.length; n++) {
       globalThis.fetch = async (input, options) =>
         String(input).startsWith("https://api.deepgram.com/")
           ? responses[n]()
           : originalFetch(input, options);
       const result = await upload();
-      assert.equal(result.status, expected[n]);
-      assert.ok(!(await result.text()).includes("sensitive provider body"));
+      assert.equal(result.status, 202);
+      const saved = await result.json();
+      assert.equal(saved.reportJobs.at(-1).status, "failed");
+      assert.ok(!JSON.stringify(saved).includes("sensitive provider body"));
     }
     assert.equal(
       (await (await fetch(base + "/incidents/voice-test")).json()).observations

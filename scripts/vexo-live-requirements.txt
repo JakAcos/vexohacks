@@ -1,0 +1,5 @@
+# Official Vexo kit transport/decoder prerequisites; no provider SDK or API key here.
+bleak
+av
+# Needed only for the serial transport option; included for a ready fallback.
+pyserial

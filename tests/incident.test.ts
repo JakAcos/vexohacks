@@ -1,3 +1,4 @@
+import { settle } from "./settle.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -75,16 +76,14 @@ test("contradictions remain visible and a resident correction cannot resolve a r
   }
 });
 
-test("failed extraction leaves no partial state and concurrent writes preserve history", async () => {
+test("failed extraction retains raw report and concurrent writes preserve history", async () => {
   const directory = await mkdtemp(join(tmpdir(), "copilot-"));
   const store = new Store(directory);
   try {
-    await assert.rejects(
-      store.record("test", "A", "Report", "demo", async () => {
-        throw new Error("offline");
-      }),
-    );
-    assert.equal((await store.get("test")).version, 0);
+    const failed = await store.record("test", "A", "Report", "demo", async () => { throw new Error("offline"); });
+    assert.equal(failed.observations.length, 1);
+    assert.equal(failed.reportJobs![0].status, "failed");
+    assert.equal(failed.issues.length, 0);
     await Promise.all(
       Array.from({ length: 8 }, (_, i) =>
         store.record(
@@ -96,7 +95,7 @@ test("failed extraction leaves no partial state and concurrent writes preserve h
         ),
       ),
     );
-    assert.equal((await store.get("test")).observations.length, 8);
+    assert.equal((await store.get("test")).observations.length, 9);
     assert.equal((await store.get("test")).issues[0].evidence.length, 8);
   } finally {
     await rm(directory, { recursive: true, force: true });
@@ -105,7 +104,7 @@ test("failed extraction leaves no partial state and concurrent writes preserve h
 
 test("HTTP scenario streams updates, validates input, guards stale approvals, and resets one incident", async () => {
   const directory = await mkdtemp(join(tmpdir(), "copilot-http-"));
-  const { app } = createApp({ directory });
+  const { app, store } = createApp({ directory });
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
@@ -114,7 +113,7 @@ test("HTTP scenario streams updates, validates input, guards stale approvals, an
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    });
+    }).then(response => settle(response, store));
   const controller = new AbortController();
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
@@ -149,7 +148,7 @@ test("HTTP scenario streams updates, validates input, guards stale approvals, an
     for (const s of scenario.slice(0, 2))
       assert.equal(
         (await post("/observations", { incidentId: "demo", ...s })).status,
-        201,
+        202,
       );
     const streamed = new TextDecoder().decode((await reader.read()).value);
     assert.match(streamed, /smoke/);
@@ -186,7 +185,7 @@ test("HTTP scenario streams updates, validates input, guards stale approvals, an
     const approved = await post(`/handovers/${draft.id}/approve`, {
       incidentId: "demo",
       approvedBy: "Team lead",
-      expectedVersion: 3,
+      expectedVersion: fresh.version,
     });
     assert.equal(approved.status, 200);
     assert.equal(
@@ -198,7 +197,7 @@ test("HTTP scenario streams updates, validates input, guards stale approvals, an
         await post(`/handovers/${draft.id}/approve`, {
           incidentId: "demo",
           approvedBy: "Lead",
-          expectedVersion: 3,
+          expectedVersion: fresh.version,
         })
       ).status,
       409,
@@ -241,6 +240,7 @@ test("HTTP scenario streams updates, validates input, guards stale approvals, an
   } finally {
     controller.abort();
     await reader?.cancel().catch(() => {});
+    await store.close();
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await rm(directory, { recursive: true, force: true });

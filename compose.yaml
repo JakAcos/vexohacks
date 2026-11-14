@@ -1,0 +1,47 @@
+name: relay-demo
+services:
+  relay:
+    build: .
+    init: true
+    restart: unless-stopped
+    env_file: cloud.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3001"
+      DATA_DIR: /app/data
+      PUBLIC_ORIGIN: https://${RELAY_DOMAIN:?Set RELAY_DOMAIN in cloud.env}
+    volumes:
+      - mission-data:/app/data
+    # A single writer owns this data volume. Do not scale this service.
+    expose:
+      - "3001"
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+  gateway:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      RELAY_DOMAIN: ${RELAY_DOMAIN:?Set RELAY_DOMAIN in cloud.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - gateway-data:/data
+      - gateway-config:/config
+    depends_on:
+      relay:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+volumes:
+  mission-data:
+  gateway-data:
+  gateway-config:

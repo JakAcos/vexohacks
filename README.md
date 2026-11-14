@@ -1,14 +1,16 @@
-# First Responder Copilot
+# Relay — Mission Orchestrator
 
-A wearable incident coordination system proposed for the November 14, 2026 Vexo hackathon.
+**R̳e̳l̳a̳y̳ i̳s̳ t̳h̳e̳ c̳e̳n̳t̳r̳a̳l̳ m̳i̳s̳s̳i̳o̳n̳ o̳r̳c̳h̳e̳s̳t̳r̳a̳t̳o̳r̳:̳ c̳o̳n̳t̳i̳n̳u̳o̳u̳s̳ c̳o̳n̳t̳e̳x̳t̳ f̳r̳o̳m̳ e̳v̳e̳r̳y̳ r̳e̳s̳p̳o̳n̳d̳e̳r̳’̳s̳ V̳e̳x̳o̳ b̳a̳n̳d̳ b̳e̳c̳o̳m̳e̳s̳ s̳h̳a̳r̳e̳d̳ u̳n̳d̳e̳r̳s̳t̳a̳n̳d̳i̳n̳g̳ a̳n̳d̳ c̳o̳o̳r̳d̳i̳n̳a̳t̳e̳d̳ a̳g̳e̳n̳t̳ a̳c̳t̳i̳o̳n̳s̳.̳**
 
-**Status: working local text demo with optional server-side voice adapters; wearable integration pending.** The backend, React dashboard, persistent incident record, source-based tracking, requested briefings, and human-approved simulated handover feed are implemented. Default processing is deterministic scenario logic, not live Gemini. Planning, implementation, and README preparation were AI-assisted.
+Start with the [three-hour catch-up and exact checkpoint status](CHECKPOINT_HANDOFF.md). It explains the goal, integrated capabilities, verification and remaining gaps.
 
-> For a simulated emergency only. The prototype is intended to support communication and situational awareness. Humans make all operational decisions. No real emergency service is contacted during the demo.
+Relay brings responder context into one shared mission, then coordinates source-linked actions from that context. Police, firefighters, EMS and the 911 dispatcher contribute to the same mission record. The dashboard shows what was reported, what changed, what the coordinator requested, and what the service returned.
 
-## Run the local demo
+**Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Service execution uses local simulated connectors: no real emergency units, emails or external services are contacted. Implementation and this documentation are AI-assisted.
 
-Requires **Node.js 24 or newer** and npm. From this repository:
+## Start
+
+Requires Node.js 24 or newer and npm.
 
 ```sh
 npm ci
@@ -16,102 +18,77 @@ npm run build
 npm start
 ```
 
-Open **http://127.0.0.1:3001**. No API keys or band are needed. For development with live rebuilds, run `npm run dev` and open **http://127.0.0.1:5173** (backend stays on port 3001).
+Open http://127.0.0.1:3001. By default `AGENT_MODE=demo` uses labeled scenario rules. A locally configured `.env` can select Gemini. Preserve any existing `.env`; never overwrite or commit credentials.
 
-1. Use **Reset simulation** if there is already an incident.
-2. Click **Smoke + possible occupant**, then **Rear entrance blocked**.
-3. Click **Give me the latest briefing**. The resident's possible occupant remains unconfirmed.
-4. Click **Resident locates missing person**, then **Update my briefing**. Only the resident occupant concern resolves, according to the resident; smoke and the blocked entrance remain active. Original reports remain in the timeline and source history.
-5. Click **Prepare handover**, review the draft, enter the reviewer's name, check the review box, and approve it to the **simulated** team feed. An incident update invalidates an older draft.
+For live Gemini, configure `AGENT_MODE=gemini`, `GEMINI_API_KEY` and `GEMINI_MODEL` using the locally verified model available to your account. Gemini supplies transcription, structured report extraction, coordination and speech. Optional `GEMINI_TTS_MODEL` selects the speech model. Deepgram transcription and MiniMax speech remain optional adapters, with separate configuration and labels.
 
-You can also type speaker-tagged reports as Firefighter A or B. The narrow demo parser recognizes the staged scenario and basic smoke/entrance reports; other reports remain visible as unclassified questions requiring review. Conflicting reports are retained and flagged. It is not a general emergency reasoning system.
+Use `?incidentId=your-mission` on every participant's browser to share the same mission. IDs allow 1–64 letters, digits, underscores and hyphens. Different IDs isolate mission records. This prototype binds to this computer by default; other devices require a separately configured secure connection. It is not a public multi-user deployment.
 
-The dashboard receives live Server-Sent Events (SSE). Observation extraction time and the browser's last request round trip are measured locally and labeled separately. No voice-to-dashboard latency claim is made. **Read aloud on this computer** uses browser speech synthesis when available; it is not MiniMax or wearable playback.
+## Hackathon demonstration
+
+1. Open a new mission and select a source role in the voice controls. Allow the selected speech service and start the mission microphone once. Keep it running as reports arrive.
+2. Firefighter: “Smoke coming from the second floor. A resident reports someone may still be upstairs.” The report retains its speaker, timestamp and uncertainty. The coordinator sends a team update.
+3. Police: “Request an ambulance for two injured people.” The coordinator proposes an EMS request and links its source. Use a second browser/source session on the same mission, or the labeled rehearsal buttons to demonstrate another responder.
+4. The dispatcher reviews the latest mission context and approves the request. The local simulated EMS connector returns a receipt. The receipt and approval remain in the mission record, including after a server restart.
+5. Another responder reports the rear entrance blocked. The shared picture and team feed update. A repeated resource request links to the existing request instead of sending a duplicate.
+6. Say “Relay, give me the latest briefing.” The app speaks the current briefing, then resumes capture automatically. It labels the capture pause during playback.
+7. Give the resident correction: “The resident has located the missing person outside. The resident reports nobody else is missing.” Earlier evidence remains; unrelated hazards remain visible.
+
+The rehearsal buttons are explicitly typed fictional inputs. The real microphone path uses the selected speech provider. Do not describe rehearsal clicks, synthetic audio, browser recognition or the Vexo simulator as physical wearable capture.
+
+## Continuous context
+
+Laptop Gemini/Deepgram input uses AudioWorklet PCM capture and independent WAV segments at pauses or approximately 12-second boundaries. The session continues without a per-report Start button. Browser speech recognition is a separately labeled alternative with reconnection support.
+
+Requests are queued in order. Each finalized segment has a stable client event ID; retries reuse it. Failed and overflow segments are retained in browser memory for explicit retry. Backpressure or a disconnected microphone stops capture and reports the interruption. Briefing playback pauses that device's microphone to avoid feedback and resumes it afterward. Other mission sources can continue reporting.
+
+Accepted reports and uploaded audio are persisted on disk before AI processing. Failed server jobs remain available for retry; unfinished jobs resume after restart. Unsent audio is in browser memory only: closing or reloading the tab can lose that backlog. This is not lossless two-hour recording, speaker identification, or a verified long-duration wearable deployment. Choose the correct source role for each input device/session.
+
+## Agents and actions
+
+- **Recorder:** Gemini extraction in live mode; transparent scenario parsing in demo mode. Stores source-linked reports and facts.
+- **Situation tracker:** application logic maintains evidence, uncertainty, corrections and contradictions. Current structured topics emphasize the apartment-fire demo; other reports remain visible.
+- **Coordinator:** Gemini proposes bounded actions using the shared mission and newest report, including recommended resource requests grounded in an unmet need. Recommendations remain source-linked and require dispatcher review. Demo mode uses affirmative resource-request rules. It can create a service request to EMS, fire or police, or send an automatic update to the mission team feed.
+- **Executor:** local simulated connectors commit delivery receipts. Service requests require dispatcher approval against the current mission version. Automatic team updates preserve their sources. Concurrent approval retries return the original receipt.
+- **Briefing:** source-based briefing text with optional Gemini or MiniMax speech. It is not a separate autonomous reasoning agent.
+
+No arbitrary code, external URL, email address or tool name from an incident report can become an executable action. Transcription, extraction or planner failure preserves the saved audio/report, records a visible failed job and allows retry. There is no silent replacement of failed live planning with demo rules.
 
 ## Backend contract
 
-JSON mutations require `Content-Type: application/json`; the audio-upload endpoint below accepts raw audio bytes. The default UI incident ID is `apartment-demo`; IDs are 1–64 letters, digits, `_` or `-`. State is isolated by incident ID.
+JSON mutations require `Content-Type: application/json`. Raw audio routes accept supported audio bytes. Report intake returns HTTP 202 with durable saved state before AI completes. Follow `reportJobs` through SSE or GET for derived facts and actions; other operations return updated state unless noted.
 
-```sh
-curl -X POST http://127.0.0.1:3001/api/observations \
-  -H 'Content-Type: application/json' \
-  -d '{"incidentId":"apartment-demo","speaker":"Firefighter B","text":"Rear entrance is blocked.","inputKind":"transcript"}'
-```
-
-`inputKind` is optional (`typed` by default); accepted values are `typed`, `transcript`, and `vexo-simulated-text`. Send only final transcripts once. There is no idempotency or transcript deduplication yet; retrying a committed observation creates another timeline entry.
-
-| Endpoint                          | Request / response                                                                                                                                        |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`                 | Processing mode, role implementations, and Gemini configuration availability. Never returns credentials.                                                  |
-| `GET /api/incidents/:id`          | Complete incident snapshot, including observations, evidence, briefing revisions and handovers.                                                           |
-| `GET /api/incidents/:id/events`   | SSE `incident` events containing complete snapshots; reconnect gets the current state.                                                                    |
-| `POST /api/observations`          | `{incidentId, speaker, text, inputKind?}` → committed incident (`201`).                                                                                   |
-| `POST /api/briefings`             | `{incidentId}` → incident with a new requested briefing.                                                                                                  |
-| `POST /api/handovers`             | `{incidentId}` → incident with an unapproved handover draft (`201`).                                                                                      |
-| `POST /api/handovers/:id/approve` | `{incidentId, approvedBy, expectedVersion}` → approved local handover. Use the current incident `version`; stale or already-approved drafts return `409`. |
-| `POST /api/incidents/:id/reset`   | `{"confirm":"RESET SIMULATION"}` → empty demo incident. Destructively clears this incident only.                                                          |
-
-Validation errors return `400`, cross-origin writes `403`, unsupported content type `415`, and processing failures `500`. A failed extraction does not commit partial state. Mutations serialize per incident; atomic JSON file replacement preserves data across server restarts in `./data` (ignored by Git). Run **one backend process** per data directory. No multi-process database locking, authentication, or production deployment is provided. The server binds to loopback by default; do not expose this unauthenticated prototype to a network.
-
-## Vexo simulator adapter
-
-Reference: [Vexo Open kit](https://github.com/VexoAI-Org/vexo-open-kit). This project uses its `Band`, `SimTransport`, `on/off('tap')`, `configure({events:true})`, and `sim.tap('tap')` interfaces. The kit is a reference dependency, not the destination repository, and is never modified or committed here.
-
-The team's band number is currently unknown. **Do not guess a number, including for the simulator.** Once the team supplies the number, put it in the ignored `.env` file using `VEXO_BAND_NUMBER`. Keep that single value for all connections.
-
-```sh
-# From this repository (the folder containing package.json):
-git clone https://github.com/VexoAI-Org/vexo-open-kit.git vexo-open-kit
-cp .env.example .env
-# Edit .env: set VEXO_BAND_NUMBER to your own team's number from the bag.
-# In one terminal, start the built app:
-npm start
-# In another terminal, run the simulator adapter:
-npm run vexo:check
-# After entering the team number:
-npm run vexo:sim
-```
-
-`npm run vexo:check` imports the actual SDK and verifies its exported connection and simulation interfaces without constructing or connecting any band. It does not need a band number.
-
-The adapter refuses missing/invalid numbers, connects only with `SimTransport`, verifies the returned identity, configures events, and triggers three simulated taps. Each tap releases one **scripted text** report through `/api/observations`; it then requests the updated briefing. Keep the dashboard open to see the streamed updates. Reset the demo before replaying it. `VEXO_KIT_PATH` defaults to `./vexo-open-kit`; `COPILOT_URL` defaults to `http://127.0.0.1:3001`. Optional separate incident: `npm run vexo:sim -- --incident-id adapter-test` (view that incident at `http://127.0.0.1:3001/?incidentId=adapter-test`).
-
-**This adapter does not capture or transcribe speech.** The kit's default simulated audio is silence, and its bundled speech recording is a fable, not the incident scenario. Our scripted text is explicitly labeled `vexo-simulated-text`. The adapter's event interface and HTTP flow are tested with a contract double; an actual kit connection has not been run while the team number is unknown.
-
-For the later wearable bridge, use the kit's speech helper (`examples/python/speech.py`: `speech.listen(band, seconds)` or final transcript callbacks), then POST `{incidentId,speaker,text,inputKind:"transcript"}` to the endpoint above. Follow the kit's own number filtering, microphone/consent and Deepgram-key instructions. Physical microphone capture remains pending; the new file-upload endpoint can transcribe prerecorded speech without capturing a microphone. No key belongs in the React app. The kit documents **no speaker on the band**, so spoken briefings need the laptop or another separately verified audio device.
-
-## Optional live Gemini extraction
-
-Default: `AGENT_MODE=demo`. To opt in, create an ignored `.env` from `.env.example`, set `AGENT_MODE=gemini`, and configure `GEMINI_API_KEY` and `GEMINI_MODEL` locally. Choose a model available to your key from the [official model list](https://ai.google.dev/gemini-api/docs/models). Never paste keys into chat, commit them, or place them in frontend variables.
-
-The backend uses the official [Interactions structured-output API](https://ai.google.dev/gemini-api/docs/structured-output), with a JSON schema and application-side validation. The dashboard explicitly shows **Gemini extraction** when enabled. Only recorder extraction uses the live model; tracking remains an evidence reducer and briefings remain source-based templates. No fake swarm or silent fallback runs. Startup fails if Gemini configuration is incomplete; request failures leave the observation uncommitted and show an error. Incident text leaves the computer for Google in this mode.
-
-Live Gemini has not been exercised with credentials. Its request/response handling is covered by mocked contract tests, which do not establish real provider compatibility or extraction quality. Deepgram file transcription and MiniMax briefing speech have server-side adapters and mocked contract coverage; real provider calls remain unverified without credentials.
-
-## Optional audio-file input and MiniMax playback
-
-These are real server-side provider adapters, not a simulated provider or silent fallback. **No live provider call has been verified yet:** this checkout has no Deepgram, MiniMax or Gemini credentials. Configuration status only means required settings exist; it does not prove the key, quota, model or voice works.
-
-- **Deepgram:** Set `DEEPGRAM_API_KEY` in your own ignored `.env`; optional `DEEPGRAM_MODEL` defaults to `nova-3`. In the dashboard, select a single-speaker recording, choose the responder, acknowledge that the recording will go to Deepgram, and click **Transcribe file and record observation**. Nothing records the computer microphone. Supported uploads: WAV, MP3, M4A/MP4, WebM, Ogg and FLAC, up to **8 MiB**. Only the resulting transcript is stored; raw audio is not persisted locally. Review the text in the timeline. Empty transcripts, confidence below 0.8, multi-channel responses, and text over 4,000 characters are rejected without changing the incident. This threshold is a conservative prototype rule, not validated recognition accuracy.
-- **MiniMax:** Set `MINIMAX_API_KEY`, `MINIMAX_MODEL`, and `MINIMAX_VOICE_ID` to values available to your account. Request a current briefing, then click **Generate MiniMax audio**. The stored briefing text goes to MiniMax; returned MP3 audio plays only when you press the audio player's controls. Audio is held in memory, not added to incident persistence. Changed or outdated briefings cannot generate playable stale audio. This uses the computer's output device, not a band speaker. The separate browser-speech button remains explicitly labeled.
-
-Official contracts: [Deepgram prerecorded audio](https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded), [Deepgram model-improvement opt-out](https://developers.deepgram.com/trust-security/your-data), and [MiniMax synchronous text-to-speech](https://platform.minimax.io/docs/api-reference/speech-t2a-http). Deepgram requests always include `mip_opt_out=true`. Both providers use fixed HTTPS endpoints, backend-only credentials, and a 30-second timeout.
-
-```sh
-# Raw file upload, NOT JSON or multipart. Use a recording everyone agreed to share.
-curl -X POST 'http://127.0.0.1:3001/api/audio/observations?incidentId=apartment-demo&speaker=Firefighter%20A&consent=send-to-deepgram' \
-  -H 'Content-Type: audio/wav' --data-binary @your-single-speaker-recording.wav
-```
-
-| Endpoint | Contract |
+| Endpoint | Purpose |
 | --- | --- |
-| `POST /api/audio/observations?incidentId=...&speaker=...&consent=send-to-deepgram` | Raw supported audio; successful transcript runs through the same recorder/tracker/store and returns the committed incident (`201`, `inputKind: "transcript"`). The consent value is required. |
-| `POST /api/briefings/audio` | JSON `{incidentId, briefingId}` for the latest requested briefing → `audio/mpeg` with `Cache-Control: no-store`. Rejects outdated briefings or changes during synthesis (`409`). |
-| `GET /api/health` | `voice.deepgram.configured` / `voice.minimax.configured` indicate configuration presence only. No credentials returned; no paid health-probe calls made. |
+| `GET /api/health` | Actual processing mode, role implementations, provider configuration presence. No credentials. |
+| `GET /api/incidents/:id` | Saved mission with observations, issues, briefings, handovers, actions and agent events. |
+| `GET /api/incidents/:id/events` | Live SSE snapshots; reconnect receives current state. |
+| `POST /api/observations` | `{incidentId,speaker,text,inputKind?,clientEventId?}` → HTTP 202 with saved Incident and background job. |
+| `POST /api/voice/turn` | `{incidentId,speaker,text,clientEventId?}` → HTTP 202 `{kind:observation,transcript,incident}` for reports; explicit briefing commands return HTTP 200. |
+| `POST /api/voice/audio` | Raw audio with query `incidentId,speaker,provider,consent,clientEventId?`. Provider gemini/deepgram; consent must match provider. HTTP 202 returns `{kind:queued,jobId,transcript:"",incident}` after audio is saved. |
+| `POST /api/actions/:id/approve` | `{incidentId,approvedBy,expectedVersion}`. Produces or returns the same simulated receipt. |
+| `POST /api/actions/:id/dismiss` | `{incidentId,expectedVersion}`. Dismisses a pending action while retaining history. |
+| `POST /api/observations/:id/plan` | `{incidentId}`. Retries coordination for an existing report without duplicate actions. |
+| `POST /api/reports/:id/retry` | `{incidentId}` → HTTP 202; retries saved audio/report processing without another upload. |
+| `POST /api/briefings` | `{incidentId}`. Generates a requested source-based briefing. |
+| `POST /api/briefings/audio` | `{incidentId,briefingId,provider?}`. Current briefing audio; provider gemini/minimax. |
+| `POST /api/handovers` | `{incidentId}`. Prepares a handover draft. |
+| `POST /api/handovers/:id/approve` | `{incidentId,approvedBy,expectedVersion}`. Human-reviewed simulated handover. |
+| `POST /api/incidents/:id/reset` | `{"confirm":"RESET SIMULATION"}`. Clears only that simulation. |
 
-Missing provider configuration returns `503`; network, timeout, invalid provider output or provider refusal returns `502`; unusable transcripts return `422`; oversized uploads return `413`; unsupported media returns `415`. There is no automatic provider fallback. Failed transcription/extraction does not create an observation; failed synthesis does not change state. Select the correct single speaker yourself; this adapter does not identify people from their voices. Recognition and extraction can still be wrong even above the confidence threshold, so all results remain attributed reports for human review.
+The Vexo audio bridge sends `inputKind=vexo-audio`, `bandNumber`, `deviceTransport` (ble/serial), and UTC `capturedAt` query fields. The transcript bridge uses `inputKind: vexo-transcript` and `sourceDevice: {kind: vexo, bandNumber, transport, capturedAt}` in JSON. These fields are only for actual band input; the simulator retains its explicit simulated type.
 
-## Checks and implementation map
+`clientEventId` is an optional UUID, unique per mission input event. Briefing commands also deduplicate this ID. Reuse the ID for a retry of the same report; never for a different report. Persistent state uses atomic JSON replacement in `./data` by default, serialized per mission. Use one backend process per data directory. Private remote access is available through PUBLIC_ORIGIN and RELAY_ACCESS_TOKEN; see CLOUD_DEPLOYMENT.md. Use one server process per data directory. Multi-process database coordination is outside this prototype.
+
+## Vexo
+
+The user assigned **band 38**. Use that exact identifier; never guess another band. The physical bridge is implemented in `scripts/vexo-live.py`; see [live bridge setup](VEXO_LIVE_BRIDGE.md). Close competing band clients and double-tap band 38 to make it discoverable before connecting. A prior bounded capture and continuous-session acceptance are separate checks; see the hardware owner’s current verification before claiming the continuous path is ready. Physical success requires an observed band connection and captured report, not merely a configured number. Device-labeled observations persist the band number, transport and capture time; the backend checks the configured team number. These are bridge-provided metadata, not independently signed hardware attestations.
+
+The original `scripts/vexo-bridge.mjs` remains a **simulator-only** tap adapter releasing scripted text. `npm run vexo:check` validates SDK imports without a connection. `npm run vexo:sim` requires the assigned number but does not record physical audio. The documented band has no speaker; briefings play on the laptop or another verified output device.
+
+Vexo and Gemini are the required product path. MiniMax, Meta and Deepgram are optional; do not imply a live integration or sponsor endorsement from availability alone.
+
+## Validation and implementation
 
 ```sh
 npm run typecheck
@@ -119,101 +96,15 @@ npm test
 npm run build
 ```
 
-Tests cover the resident correction and retained hazards/history; responder-vs-resident concern isolation; contradictions; disk persistence; failed extractions and concurrent writes; input validation; HTTP/SSE flow; stale and duplicate handover approvals; scoped resets; cross-origin rejection; Gemini response validation; the tap-adapter-to-backend flow; audio consent/media/size validation; Deepgram transcript failures; MiniMax output validation and stale synthesis rejection. Tests use temporary state folders and do not contact real emergency services or a live AI provider.
+Automated checks cover mission isolation, concurrent writes, source preservation, conflict handling, persistence, stale approvals, duplicate event/approval handling, simulated receipts, failed planning and retry, speech provider contracts, PCM segmentation and briefing command isolation. Browser and live-provider tests are separate evidence; passing unit tests does not establish physical band or human acceptance.
 
-- `src/server/agents.ts`: recorder extraction providers and source-based briefing role.
-- `src/server/store.ts`: shared store, situation tracking, history and handover approval.
-- `src/server/app.ts`: validated HTTP endpoints and live SSE updates.
-- `src/server/voice.ts`: optional Deepgram raw-audio transcription and MiniMax current-briefing audio.
-- `src/client/`: responsive team lead dashboard and demo controls.
-- `scripts/vexo-bridge.mjs`: optional kit simulator connection; no physical-band access.
+- `src/server/orchestrator.ts`: bounded Gemini/demo planning, source links, simulated delivery and audit.
+- `src/server/store.ts`: per-mission persistence, evidence and duplicate-safe action approval.
+- `src/server/app.ts`: HTTP/SSE and voice/action routes.
+- `src/client/MissionActions.tsx`: requests, review, receipts and agent activity.
+- `src/client/VoiceConsole.tsx`, `src/shared/continuous-audio.ts`, `public/voice-capture.js`: continuous capture and recovery.
+- `src/server/voice.ts`: server-side provider adapters; keys stay on the backend.
 
-## Original design and demo plan
+## Immediate save and background AI
 
-The following sections preserve the proposed hackathon plan. They describe intended voice/wearable capabilities as well as the implemented local text loop; the status and run instructions above define what is working now.
-
-## The idea
-
-A firefighter wears Vexo and speaks observations while a team lead follows a shared dashboard on a laptop or tablet. Three agent roles maintain the incident record, track changing conditions, and provide requested briefings. The dispatcher and the person needing help require no device.
-
-Every role uses one shared incident store. Observations retain their speaker, original source, timestamp, and uncertainty. A resident's report remains a report rather than becoming an established fact.
-
-## Three agent roles
-
-| Role                  | Responsibility                                                                                                                                                              | Output                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Incident recorder** | Extract timestamped observations from speech while preserving speaker, source, and uncertainty.                                                                             | A live incident timeline.                    |
-| **Situation tracker** | Maintain active hazards and unresolved questions, connect updates to earlier reports, flag contradictions rather than silently choosing between them, and preserve history. | Current incident state with source evidence. |
-| **Briefing agent**    | Build a short recap when requested from the current incident state and prepare a draft handover for human review and approval.                                              | Voice and written updates.                   |
-
-## Proposed stack
-
-These are proposed components, not verified integrations.
-
-| Component                             | Intended use                                                                      | Verification needed                                                                    |
-| ------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **Vexo**                              | Wearable voice interaction.                                                       | Confirm actual microphone, activation, connectivity/bridge, and playback capabilities. |
-| **Deepgram**                          | Speech recognition.                                                               | Confirm API access and recognition through the selected audio path.                    |
-| **Google Gemini**                     | Structured extraction, situation tracking, and briefings.                         | Confirm API access and behavior on the staged incident.                                |
-| **MiniMax**                           | Speech synthesis.                                                                 | Confirm API access, synthesis, and playback through a supported audio device.          |
-| **TypeScript backend**                | Receive observations, run the three agent roles, store state, and stream updates. | Build and verify the end-to-end flow.                                                  |
-| **React dashboard**                   | Display the timeline, hazards, unresolved questions, and briefing.                | Build and verify live updates.                                                         |
-| **Lightweight shared incident store** | Keep observations, their sources, status changes, and briefing revisions.         | Verify traceable updates and preserved history.                                        |
-
-The band would connect through a **verified phone or laptop bridge**; the supported route must be established before building around it. The initial scope has no camera dependency or on-device inference. Verify sponsor prize eligibility separately.
-
-## Demo script — approximately two minutes
-
-**Setup:** Clearly identify the scene as a simulated apartment fire. Firefighter A wears Vexo. A teammate plays Firefighter B using a second microphone. A laptop displays the team lead's dashboard. A performs a staged hands-busy task during updates.
-
-1. **Open the incident.** A activates the supported input and says:
-
-   > Start incident. Apartment building. Smoke assessment.
-
-   The system opens the incident with an empty observation timeline and incident state, ready for reports.
-
-2. **Record observations and uncertainty.** A says:
-
-   > Smoke coming from the second floor. A resident reports someone may still be upstairs.
-
-   The dashboard shows smoke reported by A and a possible occupant reported by a resident through A. Occupant status remains **unconfirmed**.
-
-3. **Update from a second speaker.** B says:
-
-   > Rear entrance is blocked.
-
-   The timeline and hazards update with B as the source while A continues the staged hands-busy task.
-
-4. **Request a briefing.** A asks:
-
-   > Give me the latest briefing.
-
-   The system speaks the following through a supported, verified audio device:
-
-   > Second-floor smoke reported. Rear entrance reported blocked. A resident reports a possible occupant upstairs; occupant status is unconfirmed.
-
-5. **Show the changing shared picture.** B says:
-
-   > The resident has located the missing person outside. The resident reports nobody else is missing.
-
-   The situation tracker connects this update to the earlier occupant concern and marks that concern **resolved according to the resident**, preserving both observations and their history. Smoke and the blocked entrance remain active. A asks:
-
-   > Update my briefing.
-
-   The recap reflects the changed occupant concern, keeps the resident attribution visible, and retains the active hazards.
-
-6. **Prepare a human-approved handover.** The team lead clicks **Prepare handover**, reviews the draft, and approves it to a simulated shared team feed. No real emergency service is contacted.
-
-## Build order
-
-1. Verify Vexo input, activation, connectivity, and the phone/laptop bridge.
-2. Build shared incident state and the live dashboard.
-3. Connect speech recognition and the three agent roles.
-4. Add requested spoken briefings through a verified playback path.
-5. Rehearse the full demo and measure latency.
-
-## Success criteria
-
-The target is for a spoken observation to change the shared incident picture within seconds, with sources and uncertainty visible while the firefighter's hands remain free. Briefings should reflect later updates without erasing earlier reports, and handovers require human approval.
-
-Latency has **not been measured**. End-to-end behavior and hardware compatibility must be tested before claiming the prototype meets these criteria.
+Report and audio intake now return HTTP 202 after a durable save; AI continues in the background. Follow job progress through the mission stream and the Saved reports panel. See [durable intake and API contract](BACKGROUND_REPORTS.md) for response shapes, failure recovery, and verification. The endpoint descriptions above describe completed results; do not assume facts/actions exist in an intake acknowledgment.
