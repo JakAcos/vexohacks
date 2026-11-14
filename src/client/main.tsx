@@ -6,12 +6,15 @@ import "./style.css";
 import { VoiceConsole } from "./VoiceConsole";
 import { BandListening } from "./BandListening";
 import { MissionActions } from "./MissionActions";
+import { MissionSourceStatus } from "./MissionSourceStatus";
 import { TestDispatch } from "./TestDispatch";
 import { SponsorEvidence } from "./SponsorEvidence";
 import { sponsorEvidence } from "../shared/sponsorEvidence";
 import { latestIncident, ReportSubmissions } from "../shared/mission-sync";
 import "./mission-design.css";
 type Health = {
+  missionTestExecution?: boolean;
+  missionSource?: {sourceMission:string;targetMission:string};
   mode: "demo" | "gemini";
   roles: Record<string, string>;
   voice: {
@@ -260,7 +263,8 @@ function App() {
             {error}
           </div>
         )}
-        <BandListening incidentId={incidentId} speaker={speaker} onSpeaker={setSpeaker} onActive={setBandActive} externalBusy={voiceActive || !!operation} />
+        <MissionSourceStatus missionId={incidentId} />
+        {health && !health.missionSource && <BandListening incidentId={incidentId} speaker={speaker} onSpeaker={setSpeaker} onActive={setBandActive} externalBusy={voiceActive || !!operation} />}
         <details className="input-alternative" open={voiceActive || undefined} onToggle={e => { if (voiceActive) e.currentTarget.open = true; }}>
           <summary>Laptop microphone & spoken briefing{voiceActive ? " · session active" : ""}</summary>
         <VoiceConsole incidentId={incidentId} incident={state} speaker={speaker} onSpeaker={setSpeaker}
@@ -271,7 +275,7 @@ function App() {
         <div className="workspace">
           <div className="primary">
             <div id="mission-actions"><MissionActions incident={state} busy={!!operation} connected={connected} act={act} /></div>
-            <TestDispatch missionId={incidentId} />
+            {!health?.missionTestExecution && <TestDispatch missionId={incidentId} />}
             <section className="panel timeline-panel">
               <div className="panel-heading">
                 <div>

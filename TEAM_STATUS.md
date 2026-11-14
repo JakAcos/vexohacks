@@ -1,56 +1,109 @@
-# Relay: start here, team
+# Relay: five-hour rundown and current state
 
-November 14, 2026 checkpoint. Prepared by Codex; agent-authored, not human-reviewed.
+Updated November 14, 2026 after the two timed physical rehearsals at approximately 2:57–2:59 PM Pacific. Prepared by Codex from source, test results, saved service receipts and user-spoken rehearsals. This is agent-authored evidence, not a claim of independent human code review.
 
-**Relay's goal is to turn continuous responder context into shared mission understanding and coordinated, accountable actions.** The current prototype proves the shared context and controlled execution pieces. The full physical-band → mission-selected action → external execution chain is still being integrated.
+## What to know first
 
-## Get the current code
+**The essential demo now works: a real wristband report produces a Gemini-selected request, a real controlled test-service receipt, and a second Gemini agent’s confirmed follow-up.** Two consecutive runs took **40.910 seconds** and **39.325 seconds**, with **zero manual retries**. The clock starts when the band is listening, includes the spoken request and processing, and ends when Relay saves the final confirmation. Bluetooth discovery/pairing happens beforehand.
 
-The same current source is published on `main` in both repositories. The original verified snapshot remains on `checkpoint/team-sync-2026-11-14`:
+The most useful current context is this document, [the stage runbook](STAGE_DEMO.md), [mission execution setup](MISSION_EXECUTION.md), and [physical acceptance evidence](docs/verification/physical-demo-2026-11-14.json). Older documents saying that the fresh wristband chain is unverified describe earlier checkpoints; this report supersedes that status.
 
-- [Shared team repository](https://github.com/JakAcos/vexohacks/tree/main)
-- [Dante's repository](https://github.com/dantegarcia654/relay-vexohacks/tree/main)
+Relay’s intended product is a shared operating center: continuous reports from responders become shared mission understanding and coordinated, accountable actions. The demonstrated slice is one physical band and one controlled logistics workflow. It establishes a working demo, not a deployed emergency dispatch system.
 
-For an existing clone, commit or save local work first, then fetch and check out that branch. For a fresh copy:
+## What happened during roughly the last five hours
 
-```sh
-git clone https://github.com/JakAcos/vexohacks.git relay
-cd relay
-npm ci
-npm test
-npm run build
-npm run demo:test-dispatch
-```
+These are build phases, not an invented minute-by-minute activity log. Work overlapped across several chats; older checkpoint records remain linked below.
 
-Use Node 24 or newer. Open `http://127.0.0.1:14317/?incidentId=test-dispatch-demo#test-dispatch`. This starts the local HTTP demo with synthetic requests and generated local worker credentials. Browser execution needs the additional host setup in [BROWSER_ACTIONS.md](BROWSER_ACTIONS.md). No provider key is needed for this test-dispatch demo.
+### 1. Established the shared mission and physical input
 
-## What works, and what it proves
+We built around a mission-specific server record: attributed observations, extracted facts, unresolved issues, team updates, proposed actions, approvals and receipts. Every browser looking at the same mission ID receives the same state through snapshots and live updates. Corrections preserve earlier evidence instead of rewriting history.
 
-| Piece | Current behavior | Evidence / setup |
+The laptop owns Bluetooth and Vexo capture. Band 38 sends audio through the bridge; Gemini transcribes and extracts the report. The bridge provides band number, transport and capture metadata. Those labels are useful provenance, not signed hardware attestation. We also preserved browser/typed rehearsal inputs, explicitly labeled so they cannot masquerade as wearable capture.
+
+### 2. Made intake durable and responsive
+
+Audio and reports are saved before model processing. Background jobs expose transcription, extraction, planning, completion and failure states. Stable event IDs prevent replay from creating duplicate reports. Saved unfinished jobs resume after restart; failed provider calls retain evidence for recovery.
+
+Slow model calls do not hold the mission’s write lock. New reports and the dashboard remain responsive. Out-of-order processing restores the original report order so a late older extraction cannot overwrite a newer correction. This is durable server intake; audio still waiting in a browser tab can be lost if the tab closes.
+
+### 3. Proved actual controlled execution
+
+The initial emergency-service connectors were simulated. We added a separate local Test Desk to prove actual execution: worker A submits a ticket, the destination saves and returns its own receipt, and worker B independently reads that receipt before submitting a dependent follow-up. Receipt identity, mission binding and stable request identities are checked.
+
+A separate browser capability also filled and submitted the controlled form in an agent-owned Chrome session, with before/after evidence. That code is preserved on `main`. It is a fixed dispatcher workflow, not part of the timed wristband demo and not AI-selected general computer use.
+
+### 4. Connected mission reasoning to execution
+
+The mission planner now chooses a bounded test request from a new report and current context. Relay persists the decision, sends the complete title and detail, verifies the destination’s saved ticket, then invokes a distinct Gemini receipt agent. That agent receives the confirmed result and latest context and plans a linked follow-up. Both actions and receipts appear in one mission history.
+
+A read-only source follower connects the existing band service to the new mission-execution instance. It baselines historical reports and already-pending audio, accepts only fresh completed reports with matching source/job metadata, and uses stable identities to avoid duplicate imports. The source service remains the only owner of band start/stop. Synthetic reports with real Gemini first proved this chain; they were not represented as physical acceptance.
+
+### 5. Tested real speech, found the failure, and fixed it
+
+The first physical run captured the requested quantity and location correctly, but later audio invalidated planning. Competing planners could repeatedly invalidate each other, and the old three-attempt cap marked a saved report failed. Manually retrying that report recovered the chain, but it took **72.603 seconds from report intake to the final destination receipt**. That was diagnostic evidence, not a passing one-minute demo. Its timing starts later than the two final runs, so it is not an apples-to-apples performance benchmark.
+
+We reproduced the failure in automated tests before changing code. The fix serializes planning per mission, separately from intake, extraction and the write lock. If newer context invalidates a proposal, Relay automatically re-evaluates the saved report against current context rather than failing after three interruptions. A short pause coalesces rapid changes. Stale proposals remain rejected; cancellation, reset and real provider-error handling remain intact. Different missions can still progress independently.
+
+A restart also exposed a local band setup problem: the Python/SDK paths had depended on launch-time settings. We restored the verified paths and persisted them in the private local configuration. The band’s short discoverability window expired during setup; double-tapping the assigned band reopened it. Neither failed connection attempt captured audio or counted as a demo run.
+
+### 6. Repeated the full physical flow successfully
+
+| Run | User-spoken training request | Listening → final confirmation | Manual retries |
+| --- | --- | ---: | ---: |
+| 1 | 12 spare radio batteries at staging area Charlie | 40.910 s | 0 |
+| 2 | 6 flashlights at staging area Bravo | 39.325 s | 0 |
+
+Both requests preserved their quantities and locations. All four destination records matched Relay’s receipts. Each follow-up referenced the exact prior receipt and both actions linked back to the original physical report. Additional speech did not break the completed chain. After stopping, all six captured report jobs across these sessions completed; there were exactly two test requests and two test follow-ups, and no pending delivery.
+
+We stopped recording and preserved the successful mission. The two measured runs used the fixed mission candidate and older source runtime patched with the same scheduling fix. Publication combines that path with the previously committed browser capability; the final combined-tree build/tests and source comparison are recorded separately in the release manifest. Do not imply that the newly merged tree received another physical rehearsal.
+
+## Problems, fixes, and remaining boundaries
+
+| Problem | What changed / evidence | Remaining boundary |
 | --- | --- | --- |
-| Shared mission context | Attributed reports, issues, proposed actions, approvals, receipts and dashboard updates. Gemini and physical Vexo input were exercised in earlier owner tests. | [Full catch-up](CHECKPOINT_HANDOFF.md), [Vexo setup](VEXO_LIVE_BRIDGE.md) |
-| HTTP execution | A submits a real ticket to a separate local Test Desk; B reads it back and submits a dependent follow-up. | [Run guide](TEST_DISPATCH.md), [acceptance record](docs/verification/test-dispatch-2026-11-14.json) |
-| Browser execution | A fills and submits the controlled destination form in an owned Chrome session. B verifies the resulting ticket over HTTP. Relay shows receipts and screenshot evidence. | [Browser guide](BROWSER_ACTIONS.md), [acceptance record](docs/verification/browser-actions-2026-11-14.json) |
-| Recovery | Verified retries, restart persistence, duplicate protection and redirect rejection for the controlled test workflow. | Same acceptance records; automated tests are in `tests/`. |
+| Context changes repeatedly failed planning | Per-mission planning serialization and automatic reevaluation; regression tests failed before the fix and passed afterward; two physical passes | Unbounded incoming context and provider latency can still affect timing; two runs are not a latency guarantee |
+| Destination received a title without the full request | Full detail is sent and validated before the receipt agent can continue | A ticket acknowledges a request; it does not deliver supplies |
+| Lost responses or replay could duplicate work | Stable IDs, saved payloads, destination readback and receipt-dependent follow-up; outage/restart/replay tests | One server process owns each data directory |
+| Historical or wrong-source reports could trigger new actions | Source baseline plus matching mode, band, job and observation metadata | Metadata is reported by the bridge, not cryptographic device identity |
+| Bluetooth unavailable or competing clients | Assigned band only, visible connection state, close other clients and reopen discovery | Pairing is a pre-demo step; no alternate band is silently selected |
+| Restart lost private SDK/Python launch settings | Verified absolute paths persisted locally; setup documented | Teammates must configure their own installed paths and private credentials |
+| Disk pressure interrupted builds/saving | Earlier work reclaimed regenerable caches, recovered a local runtime and checked durable writes | This was a machine resource problem, not proof of long-term storage capacity |
+| Parallel branches made “current” ambiguous | Essential path and this handoff promoted together to both repositories’ `main` | Fetch before editing; historical hashes describe their original snapshots |
 
-Application source is unchanged from verified browser checkpoint `b6901cedbdf1f91a83bdf6610b7270ddb52b6dea`, which includes HTTP checkpoint `dc506a835a042ea2848987782562e4e109c8e3a4` and shared-context checkpoint `e316eaa`. This synchronization adds the team guide and restricts the shared-repository notification workflow to its intended repository. The browser checkpoint records 70 passing Node tests, a successful build, actual browser acceptance, matching destination receipts, and restart/replay checks. Physical hardware and live provider tests were earlier, separate checks, not repeated for this synchronization.
+## Current architecture and state
 
-For this synchronization, a fresh `npm ci`, all 70 application tests, and the production build passed again. The Python bridge suite passed 19 tests with one optional SDK decoder check skipped because `VEXO_KIT_PATH` was not configured. Browser acceptance was not rerun; all 12 source hashes in its existing acceptance record were independently matched. No physical band or paid provider was used for these checks.
+`Band 38 → laptop bridge → source mission (:3001) → fresh-report follower → mission executor (:14417) → controlled Test Desk (:14418) → receipt-aware Gemini follow-up → mission history`
 
-## What is still in progress
+The source stores audio/reports and handles transcription/extraction. The follower reuses completed facts instead of retranscribing audio. Gemini reasons from the mission context; execution is restricted to configured test capabilities and destinations. The receipt agent acts only after validation and readback. The dashboard shows the accumulated record. The local services call cloud Gemini; this does **not** establish cloud-hosted orchestration.
 
-- Mission context selecting and launching the controlled execution workflow is a separate ongoing integration. The verified test workflow here is manually triggered and uses fixed workers.
-- Cloud execution and deployment acceptance are separate work. [Deployment files](CLOUD_DEPLOYMENT.md) alone do not establish a working hosted service.
-- Long-duration and simultaneous multi-band acceptance remain open. The browser runner depends on the current host's owned-session allocator; it is not portable cloud computer control.
-- Real emergency-service dispatch remains simulated. No actual emergency services are contacted by these demos.
-- Optional [Antigravity work in PR #4](https://github.com/JakAcos/vexohacks/pull/4) remains a separate branch and is not silently combined with this checkpoint.
+**Proven:** two under-one-minute physical demos, source-linked actions, exact request transfer, dependent receipts, recovery behavior in tests, and saved history. The fixed candidate passed 81 Node tests and a production build; 23 tests separately passed against the exact older source-runtime patch. See the [current publication manifest](docs/verification/verified-wristband-release-2026-11-14.json) for checks on the combined release tree, rather than treating those earlier counts as its test result.
 
-This is a time-bounded checkpoint of the completed, verified work, not a claim that other active chats have stopped or that their unfinished changes are accepted.
+**Still unproven or outside this demo:** sustained two-hour operation, simultaneous multiple bands, portable cloud browser workers, AI-selected browser execution, a fresh remote/second-device deployment on the stage network, real emails, real emergency-service integration, and real-world fulfillment. Optional Antigravity work is not silently merged. Vexo and Gemini are the essential demonstrated path; optional sponsor adapters are not prerequisites.
 
-## Demo and prior publication
+## Pull this into your context
 
-The earlier submission package remains at [Dante's publication commit `720a9b2`](https://github.com/dantegarcia654/relay-vexohacks/tree/720a9b2ab3cbb90492bba117e05e524233ac97f5), including its [labeled software demo](https://github.com/dantegarcia654/relay-vexohacks/blob/720a9b2ab3cbb90492bba117e05e524233ac97f5/demo/Relay-Software-Demo-V1.mp4) and submission notes. That video shows the earlier simulated workflow and labeled historical hardware evidence; it does not demonstrate the newer browser checkpoint.
+Both repositories use `main` for this handoff:
 
-The merge preserves both repositories' histories and prior demo materials. Application source, tests and dependencies remain identical to checkpoint `5481528`; `main` adds front-page navigation and the prior publication materials. The already-published demo video is intentionally retained. Previously packaged browser/server bundles were rebuilt from the current source to avoid serving stale code. Credentials, raw speech, mission stores, local execution screenshots, caches and dependency folders remain excluded.
+- [Shared team repository](https://github.com/JakAcos/vexohacks/tree/main) — existing collaborators retain access.
+- [Public mirror](https://github.com/dantegarcia654/relay-vexohacks/tree/main) — anyone can read it.
 
-The root `PUBLICATION-MANIFEST.json`, `RELEASE-MANIFEST.json`, `SUBMISSION.md`, `submission-copy.txt` and `verification/` records describe the historical `720a9b2` publication; their earlier claims and hashes are not current-build acceptance. Current merge contents are recorded in [the main merge manifest](docs/verification/main-merge-2026-11-14.json). New commits on the shared repository also appear in its [team handoff issue](https://github.com/JakAcos/vexohacks/issues/2).
+In an existing clone, preserve local changes, fetch, and fast-forward `main`; do not reset somebody else’s work. For a fresh copy use either repository, Node 24+, `npm ci`, `npm test`, and `npm run build`. Follow [STAGE_DEMO.md](STAGE_DEMO.md) for the essential physical flow. `npm run demo:test-dispatch` remains a useful no-key HTTP smoke demo, but it does not prove wristband input or model selection.
+
+The repository’s automatic push handoff links directly to this file and the stage runbook at the pushed commit. The workflow reports changes; it is not the application test runner or evidence that a teammate read the message.
+
+## Demo plan and stopping point
+
+**30 seconds explain → 60 seconds demonstrate → 30 seconds finish.** Prepare the connection before the timed minute, use one fresh logistics request, show the report and both receipts, and trace the follow-up to its confirmed source. Preserve the completed rehearsal as a clearly labeled fallback. Repeating an already fulfilled request may correctly produce no new request; prepare a fresh source/target mission instead of deleting the proof.
+
+We have reached a working-demo stopping point. Freeze the essential path for presentation; prioritize clear setup and one rehearsed story over adding new execution modes. The preserved older video and Devpost materials are historical artifacts, not a recording of the newest physical flow. This push does not upload a replacement video or resubmit Devpost.
+
+## Historical evidence
+
+- Shared-context checkpoint: `e316eaa`.
+- HTTP receipts: `dc506a8`, [verification](docs/verification/test-dispatch-2026-11-14.json).
+- Fixed browser worker: `b6901ce`, [verification](docs/verification/browser-actions-2026-11-14.json).
+- Prior synchronized main: `5f49379`; [merge manifest](docs/verification/main-merge-2026-11-14.json).
+- Mission-driven synthetic Gemini acceptance: `82f2aea`; [verification](docs/verification/mission-execution-2026-11-14.json).
+- Latest physical acceptance: [two timed runs](docs/verification/physical-demo-2026-11-14.json).
+
+Historical publication manifests and `SUBMISSION.md` retain their original scope. No credentials, raw recordings, incidental conversations, personal local paths or live mission stores are included in this update.

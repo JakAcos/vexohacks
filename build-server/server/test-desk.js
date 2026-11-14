@@ -8,7 +8,7 @@ import { DispatchLock, saveDispatchFile } from "./test-dispatch-files.js";
 import { followUpMessage } from "../shared/test-dispatch.js";
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const missionId = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/);
-const ticketInput = z.object({ runId: z.string().uuid(), missionId, title: z.string().trim().min(1).max(160) }).strict();
+const ticketInput = z.object({ runId: z.string().uuid(), missionId, title: z.string().trim().min(1).max(160), detail: z.string().min(1).max(1000).optional() }).strict();
 const followInput = z.object({ runId: z.string().uuid(), missionId, sourceReceiptId: z.string().uuid(), message: z.string().max(400) }).strict();
 // An actual, separately hosted HTTP destination. It creates its own durable receipts.
 export function createTestDesk(directory, tokens) {
@@ -79,6 +79,18 @@ export function createTestDesk(directory, tokens) {
             const ticket = await lookup(input.sourceReceiptId);
             if (!ticket || ticket.kind !== "ticket" || ticket.runId !== input.runId || ticket.missionId !== input.missionId || followUpMessage(ticket) !== input.message)
                 throw Object.assign(new Error("Follow-up requires a matching accepted ticket and its result."), { status: 409 });
+            return { ...input, id: randomUUID(), kind: "follow_up", acceptedAt: new Date().toISOString(), destination: "Relay Test Desk", test: true };
+        });
+        res.status(result.replayed ? 200 : 201).json(result.receipt);
+    });
+    app.post("/mission-follow-ups", async (req, res) => {
+        const input = followInput.parse(req.body), key = `${input.runId}:mission-follow-up`;
+        if (req.get("Idempotency-Key") !== key)
+            return void res.status(400).json({ error: "Stable mission follow-up key required." });
+        const result = await commit(key, input, async () => {
+            const ticket = await lookup(input.sourceReceiptId);
+            if (!ticket || ticket.kind !== "ticket" || ticket.runId !== input.runId || ticket.missionId !== input.missionId || !input.message.trim() || !input.message.includes(ticket.id))
+                throw Object.assign(new Error("Mission follow-up requires the confirmed ticket from this mission and its receipt UUID."), { status: 409 });
             return { ...input, id: randomUUID(), kind: "follow_up", acceptedAt: new Date().toISOString(), destination: "Relay Test Desk", test: true };
         });
         res.status(result.replayed ? 200 : 201).json(result.receipt);

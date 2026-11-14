@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TicketReceipt, FollowUpReceipt } from "./test-dispatch.js";
 export const incidentIdSchema = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/);
 export const sourceDeviceSchema = z.object({
   kind: z.literal("vexo"), bandNumber: z.number().int().min(1).max(999),
@@ -42,6 +43,7 @@ export interface ReportJob {
   timings: { transcriptionMs?: number; extractionMs?: number; planningMs?: number; totalMs?: number };
 }
 export interface Observation {
+  importedFrom?: { missionId: string; observationId: string };
   processing?: ReportJob["status"];
   factsReady?: boolean;
   id: string;
@@ -100,16 +102,23 @@ export interface Incident {
 }
 export interface MissionAction {
   id: string;
-  kind: "service_request" | "team_update";
-  service: "ems" | "fire" | "police" | "team";
+  kind: "service_request" | "team_update" | "test_request" | "test_follow_up";
+  service: "ems" | "fire" | "police" | "team" | "test_desk";
   title: string;
   detail: string;
   sourceObservationIds: string[];
-  status: "proposed" | "acknowledged" | "dismissed";
+  status: "proposed" | "acknowledged" | "dismissed" | "queued" | "executing" | "failed";
   createdAt: string;
   updatedAt: string;
   approvedBy?: string;
   receipt?: { id: string; service: string; message: string; timestamp: string; simulated: true };
+  testExecution?: {
+    destination: string; plannedVersion: number; planner: "gemini";
+    phase: "queued" | "submitting" | "planning_follow_up" | "following_up" | "complete" | "failed" | "cancelled";
+    ticket?: TicketReceipt; followUp?: FollowUpReceipt;
+    followUpActionId?: string; parentActionId?: string; sourceReceiptId?: string;
+    error?: string;
+  };
 }
 export interface AgentEvent {
   id: string;

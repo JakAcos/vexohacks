@@ -24,6 +24,7 @@ export class Store {
     }
     queues = new Map();
     tasks = new Map();
+    planners = new Map();
     running = 0;
     slots = [];
     stopped = false;
@@ -79,6 +80,7 @@ export class Store {
                     audit(current, "coordinator", "Restored saved audio reports to their received order. Original reports and action receipts were preserved.");
                 });
             }
+            this.adapters.onChange?.(state);
             for (const job of state.reportJobs ?? []) {
                 if (job.status !== "complete" && job.status !== "failed")
                     this.schedule(id, job.id);
@@ -88,6 +90,18 @@ export class Store {
     async idle() { while (this.tasks.size)
         await Promise.all([...this.tasks.values()]); }
     async close() { this.stopped = true; await this.idle(); }
+    async planOrdered(id, work) {
+        const previous = this.planners.get(id) ?? Promise.resolve();
+        const task = previous.catch(() => { }).then(work);
+        this.planners.set(id, task);
+        try {
+            await task;
+        }
+        finally {
+            if (this.planners.get(id) === task)
+                this.planners.delete(id);
+        }
+    }
     schedule(id, jobId, extract) {
         const key = this.jobKey(id, jobId);
         if (this.stopped || this.tasks.has(key))
@@ -182,7 +196,7 @@ export class Store {
     duplicate(state, clientEventId) {
         return clientEventId ? state.reportJobs?.find(j => j.clientEventId === clientEventId) : undefined;
     }
-    async acceptRecord(id, speaker, text, mode, inputKind = "typed", clientEventId, sourceDevice, extract) {
+    async acceptRecord(id, speaker, text, mode, inputKind = "typed", clientEventId, sourceDevice, extract, imported) {
         let jobId;
         const state = await this.mutate(id, state => {
             if (clientEventId && state.voiceCommands.some(c => c.clientEventId === clientEventId))
@@ -197,10 +211,12 @@ export class Store {
             if (this.duplicate(state, clientEventId))
                 throw new HttpError(409, "Report identifier already used for audio.");
             const timestamp = new Date().toISOString();
-            const observation = { id: randomUUID(), clientEventId, sourceDevice, speaker, text, timestamp, mode, inputKind, processingMs: 0, facts: [], factsReady: false, processing: "queued" };
+            const observation = { id: randomUUID(), clientEventId, sourceDevice, speaker, text, timestamp, mode, inputKind, processingMs: 0, facts: imported?.facts ?? [], factsReady: Boolean(imported), importedFrom: imported?.origin, processing: "queued" };
             const job = { id: randomUUID(), clientEventId, speaker, mode, inputKind, sourceDevice, observationId: observation.id, status: "queued", submittedAt: timestamp, timings: {} };
             state.observations.push(observation);
             (state.reportJobs ??= []).push(job);
+            if (imported)
+                this.rebuildIssues(state);
             state.version++;
             jobId = job.id;
         });
@@ -368,35 +384,41 @@ export class Store {
                     this.rebuildIssues(current);
                 });
             }
-            // Network/model work never owns the write lock. Validate its context again at commit.
-            for (let attempt = 0; attempt < 3; attempt++) {
-                state = await this.updateJob(id, jobId, (_, j) => { j.status = "planning"; delete j.error; });
-                job = state.reportJobs?.find(j => j.id === jobId);
-                observation = state.observations.find(o => o.id === job?.observationId);
-                if (!job || !observation)
-                    return;
-                const version = state.version, actions = JSON.stringify(state.actions), started = performance.now();
-                const proposals = await (this.adapters.plan ? this.adapters.plan(state, observation, job.mode) : job.mode === "gemini" ? modelPlan(state, observation) : Promise.resolve(demoPlan(observation)));
-                let stale = false;
-                await this.updateJob(id, jobId, (current, j) => {
-                    j.timings.planningMs = (j.timings.planningMs ?? 0) + Math.round(performance.now() - started);
-                    if (current.version !== version || JSON.stringify(current.actions) !== actions) {
-                        stale = true;
+            // Serialize only planning, not intake/extraction or the mission write lock.
+            // A newer report invalidates a proposal, not its durable source job. Replan
+            // automatically from current context instead of failing after three updates.
+            await this.planOrdered(id, async () => {
+                while (!this.stopped) {
+                    state = await this.updateJob(id, jobId, (_, j) => { j.status = "planning"; delete j.error; });
+                    job = state.reportJobs?.find(j => j.id === jobId);
+                    observation = state.observations.find(o => o.id === job?.observationId);
+                    if (!job || !observation)
+                        return;
+                    const version = state.version, actions = JSON.stringify(state.actions), started = performance.now();
+                    const proposals = await (this.adapters.plan ? this.adapters.plan(state, observation, job.mode) : job.mode === "gemini" ? modelPlan(state, observation, this.adapters.testDestination) : Promise.resolve(demoPlan(observation)));
+                    let stale = false;
+                    await this.updateJob(id, jobId, (current, j) => {
+                        j.timings.planningMs = (j.timings.planningMs ?? 0) + Math.round(performance.now() - started);
+                        if (current.version !== version || JSON.stringify(current.actions) !== actions) {
+                            stale = true;
+                            return;
+                        }
+                        applyProposals(current, current.observations.find(o => o.id === j.observationId), j.mode, proposals, this.adapters.testDestination);
+                        j.status = "complete";
+                        j.completedAt = new Date().toISOString();
+                        j.timings.totalMs = Date.now() - Date.parse(j.submittedAt);
+                        current.observations.find(o => o.id === j.observationId).processingMs = j.timings.totalMs;
+                    });
+                    if (!stale) {
+                        if (job.audio)
+                            await unlink(this.audioPath(id, jobId)).catch(() => { });
                         return;
                     }
-                    applyProposals(current, current.observations.find(o => o.id === j.observationId), j.mode, proposals);
-                    j.status = "complete";
-                    j.completedAt = new Date().toISOString();
-                    j.timings.totalMs = Date.now() - Date.parse(j.submittedAt);
-                    current.observations.find(o => o.id === j.observationId).processingMs = j.timings.totalMs;
-                });
-                if (!stale) {
-                    if (job.audio)
-                        await unlink(this.audioPath(id, jobId)).catch(() => { });
-                    return;
+                    // Coalesce rapid updates before the next model call. Shutdown leaves the
+                    // job in planning so resume() can continue it with the same identity.
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
-            }
-            throw new Error("Mission changed repeatedly during planning. Report saved; retry against the latest context.");
+            });
         }
         catch (error) {
             await this.updateJob(id, jobId, (state, job) => {

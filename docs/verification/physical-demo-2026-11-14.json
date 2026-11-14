@@ -1,0 +1,109 @@
+{
+  "preparedBy": "Codex; agent-verified user-spoken rehearsals, not independent human code review",
+  "date": "2026-11-14",
+  "timezone": "America/Los_Angeles",
+  "scope": "Two physical-band rehearsals; stopwatch starts when listening begins, includes speech and processing, ends when Relay persists final confirmed receipt. Pairing occurs before timing. Controlled test records only; no emergency service dispatch.",
+  "mission": "band-demo-final-01",
+  "runs": [
+    {
+      "label": "take1",
+      "listeningStartedAt": "2026-11-14T22:57:26.842633Z",
+      "fullFlowConfirmedAt": "2026-11-14T22:58:07.753Z",
+      "listeningThroughFinalConfirmationSeconds": 40.91,
+      "reportIntakeThroughFinalConfirmationSeconds": 27.091,
+      "sourceJobId": "70847738-7455-45d9-8723-6cfe86af0b9f",
+      "sourceObservationId": "37be7a5a-c9cf-419b-9195-bcffe2908a75",
+      "importedObservationId": "953d35ff-94ff-4c16-9700-74e98aa2e3ae",
+      "sourceDevice": {
+        "kind": "vexo",
+        "bandNumber": 38,
+        "transport": "ble",
+        "capturedAt": "2026-11-14T22:57:40.629982Z"
+      },
+      "requestActionId": "afda58e7-ef64-49bd-a4d1-2741213693f0",
+      "followUpActionId": "6f981101-6a48-4e69-9dad-46fe8fbf8e95",
+      "ticket": {
+        "id": "a2e41d24-7e72-41d4-8699-7d23e5384881",
+        "runId": "afda58e7-ef64-49bd-a4d1-2741213693f0",
+        "missionId": "band-demo-final-01",
+        "acceptedAt": "2026-11-14T22:58:02.847Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "ticket",
+        "title": "12 spare radio batteries at staging area Charlie",
+        "detail": "Dante reported a need for 12 spare radio batteries at staging area Charlie during a training exercise."
+      },
+      "followUpReceipt": {
+        "id": "29911d7d-5fe3-41e7-8adf-83ff0276e450",
+        "runId": "afda58e7-ef64-49bd-a4d1-2741213693f0",
+        "missionId": "band-demo-final-01",
+        "acceptedAt": "2026-11-14T22:58:07.741Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "follow_up",
+        "sourceReceiptId": "a2e41d24-7e72-41d4-8699-7d23e5384881",
+        "message": "Follow-up regarding test receipt a2e41d24-7e72-41d4-8699-7d23e5384881: The test desk accepted the test ticket requesting 12 spare radio batteries at staging area Charlie for the training exercise. Next coordination check: please verify if battery model specifications or test parameters require update."
+      },
+      "manualRetryCalls": 0,
+      "scenario": "12 spare radio batteries at staging area Charlie"
+    },
+    {
+      "label": "take2",
+      "listeningStartedAt": "2026-11-14T22:58:47.783530Z",
+      "fullFlowConfirmedAt": "2026-11-14T22:59:27.109Z",
+      "listeningThroughFinalConfirmationSeconds": 39.325,
+      "reportIntakeThroughFinalConfirmationSeconds": 22.405,
+      "sourceJobId": "8416de36-2917-4dc8-8ec8-35574fcca177",
+      "sourceObservationId": "38766e36-9027-45c0-8953-7fe06d7b47f3",
+      "importedObservationId": "840cdb6f-7fc8-4894-8e4d-48e340d35d25",
+      "sourceDevice": {
+        "kind": "vexo",
+        "bandNumber": 38,
+        "transport": "ble",
+        "capturedAt": "2026-11-14T22:59:04.599590Z"
+      },
+      "requestActionId": "628f1087-aca7-4334-9f19-89f71ee6df1c",
+      "followUpActionId": "aecfec8b-4b39-418b-a9af-8b751f990e34",
+      "ticket": {
+        "id": "cca2a1b5-c932-4b0c-98e2-e4406586d44d",
+        "runId": "628f1087-aca7-4334-9f19-89f71ee6df1c",
+        "missionId": "band-demo-final-01",
+        "acceptedAt": "2026-11-14T22:59:22.041Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "ticket",
+        "title": "6 flashlights at Staging Area Bravo",
+        "detail": "Dante requested 6 flashlights at Staging Area Bravo for the training exercise."
+      },
+      "followUpReceipt": {
+        "id": "b0e826a7-ec62-4503-94aa-94bb8a420e8b",
+        "runId": "628f1087-aca7-4334-9f19-89f71ee6df1c",
+        "missionId": "band-demo-final-01",
+        "acceptedAt": "2026-11-14T22:59:27.098Z",
+        "destination": "Relay Test Desk",
+        "test": true,
+        "kind": "follow_up",
+        "sourceReceiptId": "cca2a1b5-c932-4b0c-98e2-e4406586d44d",
+        "message": "Receipt cca2a1b5-c932-4b0c-98e2-e4406586d44d confirmed acceptance of the test ticket for 6 flashlights at Staging Area Bravo (training exercise). Next coordination check: please verify if test log updates or further simulated requests for Staging Area Bravo are required."
+      },
+      "manualRetryCalls": 0,
+      "scenario": "6 flashlights at staging area Bravo"
+    }
+  ],
+  "checks": {
+    "allDestinationRecordsExact": true,
+    "sourceAndDependentReceiptLinksExact": true,
+    "quantityAndLocationPreserved": true,
+    "noFailedReportJobsDuringEitherTake": true,
+    "exactlyTwoRequestsAndTwoFollowUps": true,
+    "noManualRetryEndpointsCalled": true
+  },
+  "originalFixValidation": {
+    "fullCandidateSuite": 81,
+    "exactSourceRuntimePatchSubset": 23,
+    "build": "passed"
+  },
+  "captureStopped": true,
+  "pendingDeliveryCount": 0,
+  "privacy": "Raw audio, incidental speech, local stores, personal paths and credentials are excluded. Scenario details below are deliberate training requests."
+}

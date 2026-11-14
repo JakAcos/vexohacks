@@ -1,16 +1,28 @@
 # Relay — Mission Orchestrator
 
-**Current team build — November 14, 2026.** Start with the [teammate catch-up](TEAM_STATUS.md) for what works, setup, verification, and unfinished work. The verified shared-context, HTTP-handoff, and browser-execution checkpoint is now on `main` in both [the shared repository](https://github.com/JakAcos/vexohacks) and [Dante's repository](https://github.com/dantegarcia654/relay-vexohacks).
+**Latest verified path — November 14, 2026:** physical Vexo wristband → shared mission report → Gemini-selected request → real controlled test-service receipt → a second Gemini agent’s confirmed follow-up. Two consecutive physical rehearsals completed in **40.910 s** and **39.325 s**, with **zero manual retries**. Timing starts when the band is listening and includes speech and processing; pair the band beforehand.
 
-[Watch the earlier software demo](demo/Relay-Software-Demo-V1.mp4) · [Demo scope](demo/README.md) · [Detailed checkpoint evidence](CHECKPOINT_HANDOFF.md)
+**Start here: [five-hour team rundown and current state](TEAM_STATUS.md).** Then read the [two-minute stage runbook](STAGE_DEMO.md), [mission execution setup](MISSION_EXECUTION.md), and [sanitized physical-run evidence](docs/verification/physical-demo-2026-11-14.json). These describe the essential demo path on `main` in the [shared team repository](https://github.com/JakAcos/vexohacks) and [public mirror](https://github.com/dantegarcia654/relay-vexohacks).
+
+[Earlier software demo](demo/Relay-Software-Demo-V1.mp4) · [Historical demo scope](demo/README.md) · [Checkpoint evidence index](CHECKPOINT_HANDOFF.md)
 
 **R̳e̳l̳a̳y̳ i̳s̳ t̳h̳e̳ c̳e̳n̳t̳r̳a̳l̳ m̳i̳s̳s̳i̳o̳n̳ o̳r̳c̳h̳e̳s̳t̳r̳a̳t̳o̳r̳:̳ c̳o̳n̳t̳i̳n̳u̳o̳u̳s̳ c̳o̳n̳t̳e̳x̳t̳ f̳r̳o̳m̳ e̳v̳e̳r̳y̳ r̳e̳s̳p̳o̳n̳d̳e̳r̳’̳s̳ V̳e̳x̳o̳ b̳a̳n̳d̳ b̳e̳c̳o̳m̳e̳s̳ s̳h̳a̳r̳e̳d̳ u̳n̳d̳e̳r̳s̳t̳a̳n̳d̳i̳n̳g̳ a̳n̳d̳ c̳o̳o̳r̳d̳i̳n̳a̳t̳e̳d̳ a̳g̳e̳n̳t̳ a̳c̳t̳i̳o̳n̳s̳.̳**
 
-Start with the [three-hour catch-up and exact checkpoint status](CHECKPOINT_HANDOFF.md). It explains the goal, integrated capabilities, verification and remaining gaps.
+The earlier three-hour notes are superseded by [TEAM_STATUS.md](TEAM_STATUS.md). For new coding-agent context, read that file before choosing work.
 
 Relay brings responder context into one shared mission, then coordinates source-linked actions from that context. Police, firefighters, EMS and the 911 dispatcher contribute to the same mission record. The dashboard shows what was reported, what changed, what the coordinator requested, and what the service returned.
 
 **Hackathon prototype.** Gemini transcription, report extraction, action planning and spoken briefing have been exercised with live provider calls. Emergency-service execution uses local simulated connectors. The optional test workflow below contacts a real local Test Desk; no emergency units or emails are contacted. Implementation and this documentation are AI-assisted.
+
+## Essential demo: mission-driven execution
+
+Gemini selects a bounded logistics request from a fresh band report. Relay saves the full request and source links, submits it to the controlled Test Desk, and verifies the destination-issued receipt. A distinct Gemini receipt-agent call uses that confirmed result and current mission context to plan a dependent follow-up. Both receipts remain in mission history.
+
+The live rehearsal exposed competing report planners: repeated context changes exhausted a three-attempt limit and left the source report failed. Planning now runs one report at a time per mission, separately from intake and extraction, and re-evaluates automatically when context changes. Stale proposals are still rejected. Real provider failures remain visible; they never become silent demo-mode successes.
+
+Use [STAGE_DEMO.md](STAGE_DEMO.md) to run the physical flow. `npm run mission:demo` starts the isolated Relay/test-desk pair on ports 14417/14418; the source band service remains on port 3001. It needs private Gemini configuration and an explicitly configured source mission. The launcher does not start a microphone.
+
+The HTTP and browser workflows below are preserved capabilities. The AI-selected mission executor uses HTTP; it does **not** autonomously operate the browser worker.
 
 ## Verified dispatcher handoff
 
@@ -36,7 +48,7 @@ For live Gemini, configure `AGENT_MODE=gemini`, `GEMINI_API_KEY` and `GEMINI_MOD
 
 Use `?incidentId=your-mission` on every participant's browser to share the same mission. IDs allow 1–64 letters, digits, underscores and hyphens. Different IDs isolate mission records. This prototype binds to this computer by default; other devices require a separately configured secure connection. It is not a public multi-user deployment.
 
-## Hackathon demonstration
+## Earlier simulated emergency scenario
 
 1. Open a new mission and select a source role in the voice controls. Allow the selected speech service and start the mission microphone once. Keep it running as reports arrive.
 2. Firefighter: “Smoke coming from the second floor. A resident reports someone may still be upstairs.” The report retains its speaker, timestamp and uncertainty. The coordinator sends a team update.
@@ -94,7 +106,7 @@ The Vexo audio bridge sends `inputKind=vexo-audio`, `bandNumber`, `deviceTranspo
 
 ## Vexo
 
-The user assigned **band 38**. Use that exact identifier; never guess another band. The physical bridge is implemented in `scripts/vexo-live.py`; see [live bridge setup](VEXO_LIVE_BRIDGE.md). Close competing band clients and double-tap band 38 to make it discoverable before connecting. A prior bounded capture and continuous-session acceptance are separate checks; see the hardware owner’s current verification before claiming the continuous path is ready. Physical success requires an observed band connection and captured report, not merely a configured number. Device-labeled observations persist the band number, transport and capture time; the backend checks the configured team number. These are bridge-provided metadata, not independently signed hardware attestations.
+The user assigned **band 38**. Use that exact identifier; never guess another band. The physical bridge is implemented in `scripts/vexo-live.py`; see [live bridge setup](VEXO_LIVE_BRIDGE.md). Close competing band clients and double-tap band 38 to make it discoverable before connecting. Two fresh physical-band-to-test-action rehearsals passed under one minute; see the current physical evidence. Longer continuous sessions and simultaneous bands remain separate acceptance work. Physical success requires an observed band connection and captured report, not merely a configured number. Device-labeled observations persist the band number, transport and capture time; the backend checks the configured team number. These are bridge-provided metadata, not independently signed hardware attestations.
 
 The original `scripts/vexo-bridge.mjs` remains a **simulator-only** tap adapter releasing scripted text. `npm run vexo:check` validates SDK imports without a connection. `npm run vexo:sim` requires the assigned number but does not record physical audio. The documented band has no speaker; briefings play on the laptop or another verified output device.
 

@@ -1,3 +1,5 @@
+import { missionSourceConfig } from "./mission-source.js";
+import { createMissionTools } from "./mission-tools.js";
 import { validateAccess } from "./access.js";
 import "dotenv/config";
 import { createApp } from "./app.js";
@@ -12,19 +14,24 @@ const port = Number(process.env.PORT ?? 3001), host = process.env.HOST ?? "127.0
 const access = validateAccess({ publicOrigin: process.env.PUBLIC_ORIGIN, accessToken: process.env.RELAY_ACCESS_TOKEN });
 if (!["127.0.0.1", "localhost", "::1"].includes(host) && !access.publicOrigin)
     throw new Error("A non-loopback server requires private remote access configuration.");
-const { app, store, ready, bandSession, dispatch } = createApp({
+const testConfig = testDispatchConfig();
+if (process.env.RELAY_MISSION_TEST_EXECUTION === "1" && (!testConfig || mode !== "gemini"))
+    throw Error("Mission test execution requires Gemini and a configured controlled test desk.");
+const { app, store, ready, bandSession, dispatch, executor, source } = createApp({
     access,
+    missionSource: missionSourceConfig(),
     directory: process.env.DATA_DIR ?? "./data",
     mode,
     serveDist: true,
-    testDispatch: testDispatchConfig(),
+    testDispatch: testConfig,
+    missionTools: process.env.RELAY_MISSION_TEST_EXECUTION === "1" ? createMissionTools(testConfig) : undefined,
 });
 await ready;
 const server = app.listen(port, host, () => console.log(`Simulated incident backend: http://${host}:${port} · ${mode} extraction · no real dispatch`));
 const shutdown = () => {
     bandSession.stop();
     server.close(() => { });
-    void Promise.all([store.close(), dispatch.close()]).then(() => process.exit(0));
+    void Promise.all([store.close(), dispatch.close(), executor?.close(), source?.close()]).then(() => process.exit(0));
 };
 process.once("SIGTERM", shutdown);
 process.once("SIGINT", shutdown);
