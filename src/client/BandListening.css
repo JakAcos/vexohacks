@@ -1,0 +1,20 @@
+.band-listening { margin-bottom: 24px; border-color: #527f6d; }
+.band-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.band-heading h2 { margin-bottom: 10px; }
+.band-status { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; white-space: nowrap; padding: 8px 0; }
+.band-status i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.band-status.listening { color: var(--mint); }
+.band-status.connecting, .band-status.reconnecting, .band-status.stopping, .band-status.unknown { color: var(--amber); }
+.band-status.error, .band-error { color: var(--danger); }
+.band-notice, .band-binding { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.band-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 18px 0; }
+.band-controls label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
+.band-controls select { min-width: 180px; padding: 11px; background: #0c181b; color: #e5eeea; border: 1px solid var(--line); border-radius: 6px; }
+.band-binding strong { color: #e5eeea; overflow-wrap: anywhere; }
+.band-counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+.band-counts dt { font-size: 11px; color: var(--muted); }
+.band-counts dd { margin: 7px 0 0; font-size: 23px; font-variant-numeric: tabular-nums; }
+.band-last-report { color: var(--muted); font-size: 11px; }
+.band-error { font-size: 13px; line-height: 1.5; }
+.presenting main > .band-listening { grid-column: 1 / -1; }
+@media (max-width: 650px) { .band-heading { flex-direction: column; gap: 0; } .band-counts { grid-template-columns: repeat(2, 1fr); } .band-controls label { width: 100%; } }

@@ -1,0 +1,492 @@
+{
+  "preparedBy": "Codex",
+  "purpose": "Sanitized public submission snapshot authorized November 14, 2026",
+  "productReleaseSha256": "d52470109f25f53b51716c5f7cd897941f0f5b50bb7bea0673ffa49ece8de802",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 155,
+      "sha256": "98683affdaf3c13e66ce8037f83966159b6642bacd4063128b62deda1862ed0a"
+    },
+    {
+      "path": ".env.example",
+      "bytes": 909,
+      "sha256": "5f98d8ba4761877ff1624e8ab5b7e15bbe27351941fc1dc7267979329dfbb0af"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 178,
+      "sha256": "5028985132179612f31503b9e361cbed5190530aa4fad44b9bec41e72b878075"
+    },
+    {
+      "path": "BACKGROUND_REPORTS.md",
+      "bytes": 5182,
+      "sha256": "1298fc98374186043b809e2966bead2131167c3e4fc47d331e4d6c4318b8ea23"
+    },
+    {
+      "path": "CLOUD_DEPLOYMENT.md",
+      "bytes": 6503,
+      "sha256": "190b492e5ca856ef18075b45bf46320722c58d17e148b5d711e822389d8c1aa5"
+    },
+    {
+      "path": "Caddyfile",
+      "bytes": 172,
+      "sha256": "fd227aa87d0941446c16f7bc3c4e7a1587e45c5365fc360a7940e7a125838c57"
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 792,
+      "sha256": "e4fbe40dcd75e26a8ac60518f952d8f130bdf700dd9e7a43f21d596d7e335a9c"
+    },
+    {
+      "path": "README.md",
+      "bytes": 12560,
+      "sha256": "d9deb1016d42cf6729c321a3bc16012810b70536e49adba49e4f8f1107d93ba9"
+    },
+    {
+      "path": "RELEASE-MANIFEST.json",
+      "bytes": 14423,
+      "sha256": "131f154994c287cc0b7696e0b538055884060d5fd289c615b2760e12bf29675e"
+    },
+    {
+      "path": "SPONSOR_ROLES.md",
+      "bytes": 11685,
+      "sha256": "c2399d3e36a3eb1c25bf3bd5b5f2cf1538a80fdaf59f1b6aa0c53cb36da8d548"
+    },
+    {
+      "path": "STAGE_DEMO.md",
+      "bytes": 2248,
+      "sha256": "e9e5e3a164fa39b8016beadef99c2c6dad8cb166c078ef76ed3b3fe9ad543469"
+    },
+    {
+      "path": "SUBMISSION.md",
+      "bytes": 2500,
+      "sha256": "8e3653641f68fbed059cca1cf23142992413e01b3af7f34d57678ca2579f4709"
+    },
+    {
+      "path": "VEXO_LIVE_BRIDGE.md",
+      "bytes": 14068,
+      "sha256": "c0fff9390bef138f128f49500b0f39f2d07570d014350b4d93ed7cc8d96718ff"
+    },
+    {
+      "path": "build-server/server/access.js",
+      "bytes": 2787,
+      "sha256": "b6fc1eab03a2656bd716dbbb574fbaa8461786406c160769903ac2092a0dca8b"
+    },
+    {
+      "path": "build-server/server/agents.js",
+      "bytes": 10290,
+      "sha256": "712cc771432e510a8b1a5408074b9bc063160c92ea0b4113a76eb2268eacd697"
+    },
+    {
+      "path": "build-server/server/app.js",
+      "bytes": 13533,
+      "sha256": "c74f994d4cc93514ce8ef533bedfb8065281000e77c2ffe02ac22f687eaaae19"
+    },
+    {
+      "path": "build-server/server/band-session.js",
+      "bytes": 9223,
+      "sha256": "f086cad6b14e80493880e3613a12d8d6d3eb42dcfc60ca7106f4146a8f912587"
+    },
+    {
+      "path": "build-server/server/index.js",
+      "bytes": 1322,
+      "sha256": "57a2f13dbe04ab79ce29c663f1dbfafa48473cd4101e0565dedf8850b9025d17"
+    },
+    {
+      "path": "build-server/server/orchestrator.js",
+      "bytes": 8155,
+      "sha256": "807e0146643fb4e60d836683707bfef43ecd0d2e4bdd725d5b222a591260ad3a"
+    },
+    {
+      "path": "build-server/server/store.js",
+      "bytes": 27822,
+      "sha256": "53fd9b8a08bbe2636fb2ca985ad543984df4a520fbd8ccbf45d19ecfb39d9fdf"
+    },
+    {
+      "path": "build-server/server/voice.js",
+      "bytes": 8619,
+      "sha256": "79db8390957599aefb283b82c0366e7cf5c6f7ad96b12863c7af11ee581a426a"
+    },
+    {
+      "path": "build-server/shared/continuous-audio.js",
+      "bytes": 2002,
+      "sha256": "39c3d1c139d0b8b8d91a24f3fbd432f4cd2a4e292651047f4a5931094ea35c7a"
+    },
+    {
+      "path": "build-server/shared/mission-sync.js",
+      "bytes": 1426,
+      "sha256": "b1de5485a3a9283cde2e92aeb2218be8200ec8260203ef8966e52c8d582dc4c3"
+    },
+    {
+      "path": "build-server/shared/model.js",
+      "bytes": 1742,
+      "sha256": "eb10901e9acc762e2a8a68d8c10ac0f1b5f02c88a5960c82911b9636acf964bc"
+    },
+    {
+      "path": "build-server/shared/sponsorEvidence.js",
+      "bytes": 1828,
+      "sha256": "cfab7a303824d113eb5764b583a4633668456e2b176074964737fbc49893635c"
+    },
+    {
+      "path": "build-server/shared/voice.js",
+      "bytes": 414,
+      "sha256": "34048cc2e6ab829fe965ede6c8c3a144f2abb511dfd19032c9cf895df35fab62"
+    },
+    {
+      "path": "cloud.env.example",
+      "bytes": 274,
+      "sha256": "c39ebe88bbe8dc969edd186c96d2e6d1120c4b1ef40b906caeb798df6827ab2e"
+    },
+    {
+      "path": "compose.yaml",
+      "bytes": 1052,
+      "sha256": "5762cc621aeb885ff0964aa48f656827d3b86244e494fc1b8d091ecc129427ab"
+    },
+    {
+      "path": "demo/README.md",
+      "bytes": 885,
+      "sha256": "c72471b8c718919536dbe2e16be36c77979c992bb5d158f740f47eff80e178ea"
+    },
+    {
+      "path": "demo/Relay-Software-Demo-V1.mp4",
+      "bytes": 2168904,
+      "sha256": "f6047e97400f9689e550c1c53473619c04e2c939d4b18b2dc02badffcc2d59f5"
+    },
+    {
+      "path": "demo/verification.json",
+      "bytes": 1241,
+      "sha256": "e6190b87417fd0261e876e37d76d00841a934d4389e7bc2e59e2be35051475b3"
+    },
+    {
+      "path": "dist/assets/index-DxkQzIz7.css",
+      "bytes": 33415,
+      "sha256": "d0aa2f6740501a4f3ab7d8c3c5641837a5bf2391678905d6faf727fc80c5c492"
+    },
+    {
+      "path": "dist/assets/index-vjVEAaGD.js",
+      "bytes": 361939,
+      "sha256": "701c8f25c5cac623fb0cdfe3cb46fe0186f4f979c8c9586f794219f1110bfc10"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 464,
+      "sha256": "d110e0b6e533e413d603db7d3f25245b425a7025ad174d1e3f4907e2ac934a84"
+    },
+    {
+      "path": "dist/voice-capture.js",
+      "bytes": 723,
+      "sha256": "7181904fa9c7e4572cc91c07e756c1ca0a23e4980458cee340154e894854e1fa"
+    },
+    {
+      "path": "index.html",
+      "bytes": 373,
+      "sha256": "43674a78098b7440b38fbc16771f9bc3882119fb1d3ceb59a382b8f69158d5c3"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 87700,
+      "sha256": "b2fe157bd6e6cd493cf0d9ecd64ee3b18ef00dc96b979973fecf2eb7690db5c4"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1117,
+      "sha256": "751c07f39da4741ec4feed5ed1ad51e5d1817165de142eb814be089c81d62353"
+    },
+    {
+      "path": "public/voice-capture.js",
+      "bytes": 723,
+      "sha256": "7181904fa9c7e4572cc91c07e756c1ca0a23e4980458cee340154e894854e1fa"
+    },
+    {
+      "path": "scripts/check-vexo-kit.mjs",
+      "bytes": 856,
+      "sha256": "2e1b508604ca67d2acc61c0fa21f084988741acd2eba70d4f095138e911f24eb"
+    },
+    {
+      "path": "scripts/cloud-smoke.mjs",
+      "bytes": 7136,
+      "sha256": "3f67bd5eb0c9704cbe059c06268b84dfc719bb5056fe88c4934305a760788ec3"
+    },
+    {
+      "path": "scripts/minimax-setup.mjs",
+      "bytes": 4820,
+      "sha256": "f49babec89f1a3ffd88b46c306e18da0812f0224deab3279c15ca6ba95426b3f"
+    },
+    {
+      "path": "scripts/vexo-bridge.mjs",
+      "bytes": 1719,
+      "sha256": "355315200f98dca08095c5b0789a99821681085a2903cb81f7463eba51c2a6a2"
+    },
+    {
+      "path": "scripts/vexo-live-requirements.txt",
+      "bytes": 182,
+      "sha256": "f03518c798fecfa4b5706b34e8ffd365cb019c8da98343ef0c51dd5d18dbc7f5"
+    },
+    {
+      "path": "scripts/vexo-live.py",
+      "bytes": 34138,
+      "sha256": "0457896690e3f04cf18095a0422ec036bc4a31fc65f7cf92486218b3f90c99a9"
+    },
+    {
+      "path": "scripts/vexo-tap.d.mts",
+      "bytes": 493,
+      "sha256": "0e99a773d554f85570a8f9558e6df51547b6baa420b3958029df56bdaeb13f52"
+    },
+    {
+      "path": "scripts/vexo-tap.mjs",
+      "bytes": 2433,
+      "sha256": "cb27117b79247aaf191f6b08f1ed21fac3f526f8772b8cfc21692f77199cd723"
+    },
+    {
+      "path": "src/client/BandListening.css",
+      "bytes": 1787,
+      "sha256": "3b24b9e5426e1c553498c2f07638d7f5f873e9e2d322734e3cad28e0a7d5f18f"
+    },
+    {
+      "path": "src/client/BandListening.tsx",
+      "bytes": 7247,
+      "sha256": "90ca65d2bcf48f087aab179bbf9590870641b5ea012373ca790dfcbaf987fe72"
+    },
+    {
+      "path": "src/client/MissionActions.tsx",
+      "bytes": 6975,
+      "sha256": "f6d696409966fd1c56eb677688f37907bb362521435c694cf4fcb7c34975a1db"
+    },
+    {
+      "path": "src/client/ReportProgress.tsx",
+      "bytes": 1223,
+      "sha256": "e712a430340eeaa174f292284e7cf4b99b5052f294eda3d32b2a22897bd9ce66"
+    },
+    {
+      "path": "src/client/SponsorEvidence.tsx",
+      "bytes": 4661,
+      "sha256": "d7d983796ea21d0ae72aa57f77e96b1908a7705ecb5191f04ede74cd0bb91a21"
+    },
+    {
+      "path": "src/client/VoiceConsole.tsx",
+      "bytes": 24154,
+      "sha256": "c7cceec1d324ef294e07a4efc0f4b47aec5c8aa0597323c1e01b6021b3dc6f30"
+    },
+    {
+      "path": "src/client/main.tsx",
+      "bytes": 30900,
+      "sha256": "14ee2986008325248fdff49308a5238d0d9f5397cb32993773f910e9313b392f"
+    },
+    {
+      "path": "src/client/mission-design.css",
+      "bytes": 4702,
+      "sha256": "32cbf1d53ee10d03164d87b5fff31afead4f0874686257315ee014abf83b2384"
+    },
+    {
+      "path": "src/client/sponsor-evidence.css",
+      "bytes": 2071,
+      "sha256": "a3bcfe4cee3ab39b13b0cf2836ae3a4a7746c4e4d6a4a7e5b1a6ae3dd6bdc3ff"
+    },
+    {
+      "path": "src/client/style.css",
+      "bytes": 31360,
+      "sha256": "0b02bd2edace3cb18f664b460792c9f57d548feb31910ac7af2a2cf463e5645a"
+    },
+    {
+      "path": "src/client/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "src/server/access.ts",
+      "bytes": 2735,
+      "sha256": "84ec2e073cfec6d3a7029fbbbd60ea89cd410b4c7723d780de38e337465112b2"
+    },
+    {
+      "path": "src/server/agents.ts",
+      "bytes": 9759,
+      "sha256": "76d5207174e8d1e8468426d6cddac4135abc3e7c2db39e41a899a5d5fd6d6702"
+    },
+    {
+      "path": "src/server/app.ts",
+      "bytes": 13583,
+      "sha256": "48eb68ede5c692143544f37e0f76a8e764ed2132fb3735cc30225aadc3d05892"
+    },
+    {
+      "path": "src/server/band-session.ts",
+      "bytes": 7882,
+      "sha256": "643217616d2a77060d76e4a913dd7fe9a537d9ed3c3789f800c3c00fddbf9d9e"
+    },
+    {
+      "path": "src/server/index.ts",
+      "bytes": 1319,
+      "sha256": "49b71012f0e594cf5332d0022464a76faf4b308857d1e9975f134154dac9a2c2"
+    },
+    {
+      "path": "src/server/orchestrator.ts",
+      "bytes": 8119,
+      "sha256": "c707c6b2b1e15e6367cb62d8b2719f4051449a15c60e0a5e283b9dca23a0b12e"
+    },
+    {
+      "path": "src/server/store.ts",
+      "bytes": 25692,
+      "sha256": "a502127f7fcb5fc3a568d3880c08c8d005a68b5ffbf34139f09bca6a51152b3a"
+    },
+    {
+      "path": "src/server/voice.ts",
+      "bytes": 8629,
+      "sha256": "fce67f180475e59b88d5898f2edec96bbfe4c80d2de153508f515b31bcddd516"
+    },
+    {
+      "path": "src/shared/continuous-audio.ts",
+      "bytes": 1851,
+      "sha256": "e6d25cc957706be3c9d872be862a4a2c27176884fce464fe82c580841d16c6f2"
+    },
+    {
+      "path": "src/shared/mission-sync.ts",
+      "bytes": 1467,
+      "sha256": "038965b26131efb22703da26ca63fb23d62c91e9d068e381275870b8f7a76d9e"
+    },
+    {
+      "path": "src/shared/model.ts",
+      "bytes": 4388,
+      "sha256": "1f74d54aa97a6d1b1c52f4e5b25059be9a3e027ee5860624b6a32a9a96da20d0"
+    },
+    {
+      "path": "src/shared/sponsorEvidence.ts",
+      "bytes": 1836,
+      "sha256": "f0e7ac10434c25f3f8e069120d516df4081dfdb675cf57950b081bea950ea13f"
+    },
+    {
+      "path": "src/shared/voice.ts",
+      "bytes": 427,
+      "sha256": "46487d76733f0efa3b13897a7d5a1b48d57a5899fc7fae103dc6ad29889ef580"
+    },
+    {
+      "path": "submission-copy.txt",
+      "bytes": 3070,
+      "sha256": "2c498e138f1811c371295cafccef0e9e2bbbdcb364e1cacdf24924a089f668fd"
+    },
+    {
+      "path": "tests/access.test.ts",
+      "bytes": 3547,
+      "sha256": "41b84c7124dec3daca30c2cd0162d8dd70998c2b8b818e59b7ceff9d7d23bc4c"
+    },
+    {
+      "path": "tests/async-intake.test.ts",
+      "bytes": 14903,
+      "sha256": "27e3b70e9e0542f6fa297c5a023ab579077138f8fd50bf3068fa181cfe4fdbec"
+    },
+    {
+      "path": "tests/band-session.test.ts",
+      "bytes": 4581,
+      "sha256": "f9faeefc200a4c4f30c291e34a427f0726c0a0b350bb8d03169c5b711111a5e5"
+    },
+    {
+      "path": "tests/bridge.test.ts",
+      "bytes": 2001,
+      "sha256": "945d9df36d3d13e6e92b3bc38e55d2dc0980fca9fdb17ae3e82a2f1a8c93d4c5"
+    },
+    {
+      "path": "tests/continuous.test.ts",
+      "bytes": 3768,
+      "sha256": "666bf1c8690c4cd059da6d842579957a16fd243bfc7069a43de08438b9cbbaf9"
+    },
+    {
+      "path": "tests/empty-extraction.test.ts",
+      "bytes": 1106,
+      "sha256": "23d40431e2482ec036707d11f2cb3eea81776c8cc807b86d784dce117b8ef557"
+    },
+    {
+      "path": "tests/incident.test.ts",
+      "bytes": 11368,
+      "sha256": "5f4699b8f94b499db0658428a118303219a7bfb891a754c03f66c6493c7d9b10"
+    },
+    {
+      "path": "tests/local-access.test.ts",
+      "bytes": 2208,
+      "sha256": "ff4d519252f87704a15e375766e9ffc1edec76997c7fc02fc7b1caa7f6d91d9d"
+    },
+    {
+      "path": "tests/mission-sync.test.ts",
+      "bytes": 5202,
+      "sha256": "1dd34381fb8a961d1fa4aad29a3c851c8771b90316a4a5ae91f0eedd986ada0c"
+    },
+    {
+      "path": "tests/orchestrator.test.ts",
+      "bytes": 9520,
+      "sha256": "70a44d4d06ea1500d788b6895ff9810e8f5d33d7b33d7475098ca9cd6fd3c0b8"
+    },
+    {
+      "path": "tests/parser.test.ts",
+      "bytes": 3890,
+      "sha256": "bd22a23f1d195f8a533df74acfb998ac5970730ef749aba8a942e5cd54b26c52"
+    },
+    {
+      "path": "tests/settle.ts",
+      "bytes": 614,
+      "sha256": "3c084ca1cd321d1ae6d68ba4549b2eb94e0c486049924887ee4e180dbc510b97"
+    },
+    {
+      "path": "tests/sponsorEvidence.test.ts",
+      "bytes": 3213,
+      "sha256": "adddbf1c0d81e8b52c4478296e92e7146561fe74f3035c06935b3f2e61b7b460"
+    },
+    {
+      "path": "tests/store-resume.test.ts",
+      "bytes": 2215,
+      "sha256": "af6b9da8504858e0702cb9bbe401dd94831188dbdd15bb678a017ce3663d1202"
+    },
+    {
+      "path": "tests/test_bounded_capture.py",
+      "bytes": 1932,
+      "sha256": "0b1821ec214d96e225d913b90423e6611807d873a4b4d34389f326db9996c15f"
+    },
+    {
+      "path": "tests/test_continuous_band.py",
+      "bytes": 3765,
+      "sha256": "e56c560c315dbea082969c55950fd3825de05c628460c01125b8b4953738362c"
+    },
+    {
+      "path": "tests/test_vexo_cloud_auth.py",
+      "bytes": 3529,
+      "sha256": "97f0c2629f055b8c724f0da0f8169fd1d6e47b7a68ffc89eece306c1c0d9780d"
+    },
+    {
+      "path": "tests/test_vexo_live.py",
+      "bytes": 9174,
+      "sha256": "cfd4ac34a1ccb90a3dd9058de749af9b515ae65ce33b43da2773aa5cc3d26cd6"
+    },
+    {
+      "path": "tests/voice.test.ts",
+      "bytes": 10732,
+      "sha256": "b186fcd704cba484d486bb4b376bde11012ada1fdf961a3235a800f69c62ed1c"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 361,
+      "sha256": "8b041e2cc11fd0a3a7a9ec626fea2bf111436ae11e47c3fd8663e256ee9d9183"
+    },
+    {
+      "path": "tsconfig.server.json",
+      "bytes": 256,
+      "sha256": "d36cf60cc81dc16332701e5509da2357ac6633675cf678d3a717d2346f0b8efd"
+    },
+    {
+      "path": "tsconfig.test.json",
+      "bytes": 335,
+      "sha256": "4b4d01c539a8420963ef42216444bd41e72ea31e82aa3434b8076b1f65635dce"
+    },
+    {
+      "path": "verification/event-requirements.json",
+      "bytes": 518,
+      "sha256": "5ed5751d7ebb11d55faeafbdbdf1bc875008559cf80df0c59133c9b2f939255e"
+    },
+    {
+      "path": "verification/package-audit.json",
+      "bytes": 2820,
+      "sha256": "52963dc7fa684767e112d3f244226dcf4bd1961a9bc1c34702ebac8fbb753343"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 279,
+      "sha256": "180453170071906f3e631c78385d9a2d7d09b436f0f61d2cfb1627a1b823dc6f"
+    }
+  ]
+}

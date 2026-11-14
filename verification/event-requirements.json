@@ -1,0 +1,19 @@
+{
+  "source": "https://docs.google.com/presentation/d/1WfolIHSbiYNbzTfdFW26vU3bxyHt2O9NPFA8HRCGcq0",
+  "sourceSlides": [
+    6,
+    8,
+    29
+  ],
+  "deadline": "2026-11-14T18:00:00-08:00",
+  "internalBuildTarget": "2026-11-14T15:00:00-08:00",
+  "required": [
+    "Project description",
+    "Public GitHub repository with code and README",
+    "Working-project video",
+    "Sponsor tracks, if applicable",
+    "Working in-person demo"
+  ],
+  "devpostLink": "https://vexohacks.devpost.com/",
+  "devpostVerified": true
+}
