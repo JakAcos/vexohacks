@@ -84,6 +84,26 @@ export function createApp({
     z.object({}).strict().parse(req.body);
     res.status(202).json(bandSession.stop());
   });
+  // Linked source: the source runtime stays the only owner of band capture. These routes only
+  // forward start/stop/status to that loopback source, always for the source mission itself,
+  // so one screen can run the whole demo without a second band client.
+  const sourceBand = async (path: string, body?: unknown) => {
+    if (!missionSource) throw new HttpError(404, "This mission has no linked band source.");
+    const response = await fetch(`${missionSource.origin}/api/band/session${path}`, body === undefined
+      ? { redirect: "error", signal: AbortSignal.timeout(4000) }
+      : { method: "POST", redirect: "error", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) });
+    const value = await response.json().catch(() => ({ error: "The band source returned an unreadable response." }));
+    return { status: response.status, value };
+  };
+  app.get('/api/band/source', async (_req,res)=>{ const r = await sourceBand(""); res.status(r.status).json(r.value); });
+  app.post('/api/band/source/start', async (req,res)=>{
+    const {speaker}=z.object({speaker:z.string().trim().min(1).max(80)}).strict().parse(req.body);
+    const r = await sourceBand("/start", { incidentId: missionSource?.sourceMission, speaker }); res.status(r.status).json(r.value);
+  });
+  app.post('/api/band/source/stop', async (req,res)=>{
+    z.object({}).strict().parse(req.body);
+    const r = await sourceBand("/stop", {}); res.status(r.status).json(r.value);
+  });
   const publish = (state: Incident) => {
     for (const client of clients.get(state.id) ?? [])
       client.write(`event: incident\ndata: ${JSON.stringify(state)}\n\n`);
