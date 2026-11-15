@@ -9,7 +9,7 @@ import { z, ZodError } from "zod";
 import { resolve } from "node:path";
 import { Store, HttpError } from "./store.js";
 import { audioTypes, voiceStatus, synthesizeBriefing, synthesizeGemini, } from "./voice.js";
-import { incidentIdSchema, observationInput, sourceDeviceSchema, } from "../shared/model.js";
+import { incidentIdSchema, observationInput, externalProposalInput, sourceDeviceSchema, } from "../shared/model.js";
 export function createApp({ directory = "./data", mode = "demo", serveDist = false, processing, access = {}, testDispatch, missionTools, missionSource, } = {}) {
     let executor;
     const app = express(), store = new Store(directory, { ...processing, testDestination: missionTools?.destination, onChange: state => { publish(state); executor?.wake(state); } }), clients = new Map();
@@ -90,6 +90,13 @@ export function createApp({ directory = "./data", mode = "demo", serveDist = fal
         missionTestExecution: Boolean(missionTools),
         missionSource: source?.snapshot(),
     }));
+    app.get("/api/incidents", async (_req, res) => res.json({ missions: await store.list() }));
+    app.post("/api/actions/propose", async (req, res) => {
+        if (missionSource)
+            throw new HttpError(409, "This candidate follows another mission read-only. Propose actions on the original mission.");
+        const result = await store.proposeExternal(externalProposalInput.parse(req.body));
+        res.status(result.outcome === "created" ? 201 : 200).json(result);
+    });
     app.get("/api/incidents/:id", async (req, res) => res.json(await store.get(incidentIdSchema.parse(req.params.id))));
     app.get("/api/incidents/:id/events", async (req, res) => {
         const id = incidentIdSchema.parse(req.params.id);

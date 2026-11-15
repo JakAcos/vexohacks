@@ -111,6 +111,8 @@ export interface MissionAction {
   createdAt: string;
   updatedAt: string;
   approvedBy?: string;
+  /** Set when an outside agent (for example over MCP) proposed this action instead of Relay's coordinator. */
+  proposedBy?: { agent: string; clientEventId?: string };
   receipt?: { id: string; service: string; message: string; timestamp: string; simulated: true };
   testExecution?: {
     destination: string; plannedVersion: number; planner: "gemini";
@@ -120,6 +122,18 @@ export interface MissionAction {
     error?: string;
   };
 }
+export const externalProposalInput = z.object({
+  incidentId: incidentIdSchema,
+  proposedBy: z.string().trim().min(1).max(80),
+  kind: z.enum(["service_request", "team_update"]),
+  service: z.enum(["ems", "fire", "police", "team"]),
+  title: z.string().trim().min(1).max(120),
+  detail: z.string().trim().min(1).max(1000),
+  sourceObservationIds: z.array(z.string().uuid()).min(1).max(12),
+  clientEventId: z.string().uuid().optional(),
+}).strict().refine(v => (v.kind === "team_update") === (v.service === "team"), "team_update must target team; service_request must target ems, fire or police.");
+export type ExternalProposal = z.infer<typeof externalProposalInput>;
+export interface MissionSummary { id: string; title: string; version: number; updatedAt: string; reports: number; activeIssues: number; pendingActions: number }
 export interface AgentEvent {
   id: string;
   agent: "coordinator" | "dispatcher" | "service";

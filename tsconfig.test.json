@@ -11,6 +11,7 @@
   "include": [
     "src/server/**/*.ts",
     "src/shared/**/*.ts",
+    "src/mcp/**/*.ts",
     "tests/**/*.ts",
     "scripts/vexo-tap.mjs"
   ]
