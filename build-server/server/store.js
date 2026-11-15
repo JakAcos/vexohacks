@@ -475,6 +475,64 @@ export class Store {
             deliverSimulated(state, action);
         });
     }
+    /**
+     * An outside agent proposes an action. It must cite existing reports, always waits for
+     * dispatcher approval (even team updates) and never reaches the automatic test desk.
+     * It does not bump the mission version: a proposal adds no new evidence.
+     */
+    async proposeExternal(input) {
+        let result;
+        const state = await this.mutate(input.incidentId, state => {
+            if (input.clientEventId) {
+                const prior = state.actions.find(a => a.proposedBy?.clientEventId === input.clientEventId);
+                if (prior) {
+                    result = { actionId: prior.id, outcome: "duplicate" };
+                    return;
+                }
+            }
+            const missing = input.sourceObservationIds.filter(sid => !state.observations.some(o => o.id === sid));
+            if (missing.length)
+                throw new HttpError(422, `Unknown source report id(s): ${missing.join(", ")}. Cite reports from this mission.`);
+            const now = new Date().toISOString();
+            const existing = input.kind === "service_request" && state.actions.find(a => a.kind === "service_request" && a.service === input.service && a.status !== "dismissed");
+            if (existing) {
+                for (const sid of input.sourceObservationIds)
+                    if (!existing.sourceObservationIds.includes(sid))
+                        existing.sourceObservationIds.push(sid);
+                existing.updatedAt = now;
+                audit(state, "coordinator", `External agent ${input.proposedBy} proposed ${input.service} support; linked to the existing request instead of duplicating it.`, existing.id);
+                result = { actionId: existing.id, outcome: "linked" };
+                return;
+            }
+            const action = {
+                id: randomUUID(), kind: input.kind, service: input.service, title: input.title, detail: input.detail,
+                sourceObservationIds: [...new Set(input.sourceObservationIds)], status: "proposed", createdAt: now, updatedAt: now,
+                proposedBy: { agent: input.proposedBy, clientEventId: input.clientEventId },
+            };
+            state.actions.push(action);
+            audit(state, "coordinator", `External agent ${input.proposedBy} proposed ${action.title} · awaiting dispatcher approval`, action.id);
+            result = { actionId: action.id, outcome: "created" };
+        });
+        return { ...result, incident: state };
+    }
+    /** Saved missions only; an ID nobody has written to yet is not listed. */
+    async list() {
+        const out = [];
+        for (const name of await readdir(this.directory).catch(() => [])) {
+            const m = /^([a-zA-Z0-9_-]{1,64})\.json$/.exec(name);
+            if (!m)
+                continue;
+            try {
+                const s = await this.get(m[1]);
+                if (!Array.isArray(s.observations))
+                    continue;
+                out.push({ id: s.id, title: s.title, version: s.version, updatedAt: s.updatedAt, reports: s.observations.length,
+                    activeIssues: s.issues.filter(i => i.status !== "resolved").length, pendingActions: s.actions.filter(a => a.status === "proposed").length });
+            }
+            catch { /* not a mission file (e.g. band session settings) */ }
+        }
+        return out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    }
     async dismissAction(id, actionId, expectedVersion) {
         return this.mutate(id, state => {
             const action = state.actions.find(a => a.id === actionId);

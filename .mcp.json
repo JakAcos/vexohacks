@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "relay": {
+      "command": "node",
+      "args": ["build-server/mcp/main.js"],
+      "env": { "RELAY_URL": "http://127.0.0.1:3001" }
+    }
+  }
+}

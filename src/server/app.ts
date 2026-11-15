@@ -22,6 +22,7 @@ import {
 import {
   incidentIdSchema,
   observationInput,
+  externalProposalInput,
   sourceDeviceSchema,
   type SourceDevice,
   type Observation,
@@ -140,6 +141,12 @@ export function createApp({
       missionSource:source?.snapshot(),
     }),
   );
+  app.get("/api/incidents", async (_req, res) => res.json({ missions: await store.list() }));
+  app.post("/api/actions/propose", async (req, res) => {
+    if (missionSource) throw new HttpError(409, "This candidate follows another mission read-only. Propose actions on the original mission.");
+    const result = await store.proposeExternal(externalProposalInput.parse(req.body));
+    res.status(result.outcome === "created" ? 201 : 200).json(result);
+  });
   app.get("/api/incidents/:id", async (req, res) =>
     res.json(await store.get(incidentIdSchema.parse(req.params.id))),
   );

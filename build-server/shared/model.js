@@ -28,6 +28,16 @@ export const factSchema = z
 export const extractionSchema = z
     .object({ facts: z.array(factSchema).max(12) })
     .strict();
+export const externalProposalInput = z.object({
+    incidentId: incidentIdSchema,
+    proposedBy: z.string().trim().min(1).max(80),
+    kind: z.enum(["service_request", "team_update"]),
+    service: z.enum(["ems", "fire", "police", "team"]),
+    title: z.string().trim().min(1).max(120),
+    detail: z.string().trim().min(1).max(1000),
+    sourceObservationIds: z.array(z.string().uuid()).min(1).max(12),
+    clientEventId: z.string().uuid().optional(),
+}).strict().refine(v => (v.kind === "team_update") === (v.service === "team"), "team_update must target team; service_request must target ems, fire or police.");
 export const scenario = [
     {
         speaker: "Firefighter A",
