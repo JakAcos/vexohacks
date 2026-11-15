@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "fixture": "synthetic text, not live emergency or physical wearable",
+  "elapsedMs": 17615,
+  "actions": [
+    {
+      "kind": "service_request",
+      "service": "ems",
+      "title": "Recommended: EMS evaluation for two reported collision injuries",
+      "detail": "Recommendation (inferred from Officer A's report, fictional-r1): Request EMS response/evaluation for two people reporting injuries after a collision, as no ambulance is currently on scene. Uncertainty: both individuals are speaking, injury severity and specific medical needs are not yet known, and Officer A did not explicitly request an ambulance.",
+      "sourceObservationIds": [
+        "fictional-r1"
+      ]
+    },
+    {
+      "kind": "team_update",
+      "service": "team",
+      "title": "Update: Two injured in collision, no ambulance on scene (Officer A)",
+      "detail": "Per Officer A (fictional-r1), two people report injuries after a collision, both are speaking, and no ambulance is on scene. Injury severity, mechanism details, and whether additional resources are needed remain unknown.",
+      "sourceObservationIds": [
+        "fictional-r1"
+      ]
+    }
+  ],
+  "receipts": [
+    {
+      "provider": "antigravity",
+      "agent": "antigravity-preview-09-2026",
+      "interactionId": "v1_ChdnOGY0YXRYTUpKcjctc0FQMjhXUGlBaxIXZzhmNGF0WE1KSnI3LXNBUDI4V1BpQWs",
+      "tool": "read_mission_context",
+      "timestamp": "2026-11-14T20:41:43.924Z",
+      "summary": "Read mission version 1: 1 source reports."
+    },
+    {
+      "provider": "antigravity",
+      "agent": "antigravity-preview-09-2026",
+      "interactionId": "v1_ChdnOGY0YXRYTUpKcjctc0FQMjhXUGlBaxIXaU1mNGF0eTNDX2VGanJFUC0tX0txQTA",
+      "tool": "propose_actions",
+      "timestamp": "2026-11-14T20:41:51.888Z",
+      "summary": "2 source-linked proposal(s) validated. Nothing dispatched."
+    }
+  ],
+  "interactionIds": [
+    "v1_ChdnOGY0YXRYTUpKcjctc0FQMjhXUGlBaxIXZzhmNGF0WE1KSnI3LXNBUDI4V1BpQWs",
+    "v1_ChdnOGY0YXRYTUpKcjctc0FQMjhXUGlBaxIXaU1mNGF0eTNDX2VGanJFUC0tX0txQTA",
+    "v1_ChdnOGY0YXRYTUpKcjctc0FQMjhXUGlBaxIXa01mNGFxV0tDWU9zMU1rUHJJTGNrQU0"
+  ],
+  "agent": "antigravity-preview-09-2026",
+  "cleanupWarnings": []
+}
